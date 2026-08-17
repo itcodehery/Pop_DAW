@@ -1,3 +1,5 @@
+![Pop DAW](pics/popdaw_banner.png)
+
 # Pop - DAP
 
 A digital audio playground for Linux.
