@@ -1,0 +1,4 @@
+[submodule "libs/tracktion_engine"]
+	path = libs/tracktion_engine
+	url = https://github.com/Tracktion/tracktion_engine.git
+	branch = develop
