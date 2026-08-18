@@ -4,7 +4,7 @@ project(PopDAW
     VERSION 0.1.0
     DESCRIPTION "Pop DAW - A modern Digital Audio Workstation for Linux"
     HOMEPAGE_URL "https://github.com/hery/Pop_DAW"
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -13,6 +13,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Build options
 option(POPDAW_BUILD_TESTS "Build tests" OFF)
+option(POPDAW_USE_ASAN "Enable AddressSanitizer in Debug builds" OFF)
+option(POPDAW_USE_TSAN "Enable ThreadSanitizer in Debug builds" OFF)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(POPDAW_USE_ASAN)
+        add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address)
+    elseif(POPDAW_USE_TSAN)
+        add_compile_options(-fsanitize=thread)
+        add_link_options(-fsanitize=thread)
+    endif()
+endif()
 
 # Add JUCE (bundled with tracktion_engine)
 add_subdirectory(libs/tracktion_engine/modules/juce)
@@ -35,11 +47,17 @@ juce_add_gui_app(PopDAW
     NEEDS_WEB_BROWSER FALSE
 )
 
+juce_generate_juce_header(PopDAW)
+
 # Source files
 target_sources(PopDAW PRIVATE
     src/Main.cpp
     src/MainComponent.cpp
     src/MainComponent.h
+    src/PopLookAndFeel.cpp
+    src/PopLookAndFeel.h
+    src/MixerChannelComponent.cpp
+    src/MixerChannelComponent.h
 )
 
 # Compile definitions
@@ -54,8 +72,18 @@ target_compile_definitions(PopDAW PRIVATE
     JUCE_MODAL_LOOPS_PERMITTED=1
 )
 
+# Binary Data
+juce_add_binary_data(PopDAW_Assets
+    HEADER_NAME "BinaryData.h"
+    NAMESPACE "BinaryData"
+    SOURCES
+        assets/fonts/BBHBartle-Regular.ttf
+        assets/fonts/DMSans.ttf
+)
+
 # Link against JUCE modules and Tracktion Engine
 target_link_libraries(PopDAW PRIVATE
+    PopDAW_Assets
     tracktion::tracktion_engine
     tracktion::tracktion_graph
     juce::juce_audio_basics

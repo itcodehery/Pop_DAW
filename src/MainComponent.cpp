@@ -7,15 +7,72 @@
 */
 
 #include "MainComponent.h"
+#include <BinaryData.h>
+
+//==============================================================================
+class SettingsOverlay : public juce::Component
+{
+public:
+    SettingsOverlay(tracktion::engine::Engine& engine)
+    {
+        selector.reset(new juce::AudioDeviceSelectorComponent(engine.getDeviceManager().deviceManager, 
+                                                              0, 256, 0, 256, true, true, true, false));
+        addAndMakeVisible(selector.get());
+        
+        closeButton.onClick = [this] { setVisible(false); };
+        addAndMakeVisible(closeButton);
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        // Dark semi-transparent background to dim the main UI
+        g.fillAll(juce::Colours::black.withAlpha(0.85f));
+        
+        // Solid background for the dialog area
+        auto area = getLocalBounds().reduced(40);
+        g.setColour(juce::Colour(0xff222233));
+        g.fillRoundedRectangle(area.toFloat(), 8.0f);
+        
+        g.setColour(juce::Colours::white);
+        g.setFont(20.0f);
+        g.drawText("Audio Settings", area.removeFromTop(40).toNearestInt(), juce::Justification::centred);
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds().reduced(40);
+        area.removeFromTop(40); // Leave space for title
+        closeButton.setBounds(area.removeFromBottom(50).reduced(150, 10));
+        selector->setBounds(area.reduced(10));
+    }
+
+private:
+    std::unique_ptr<juce::AudioDeviceSelectorComponent> selector;
+    juce::TextButton closeButton { "Close" };
+};
 
 //==============================================================================
 MainComponent::MainComponent()
 {
+    setLookAndFeel(&customLookAndFeel);
+
+    // --- Dummy Mixer Channels ---
+    mixerChannels.push_back(std::make_unique<MixerChannelComponent>(nullptr, "PIANO", juce::Colour(0xffff8a8a))); // Pink
+    mixerChannels.push_back(std::make_unique<MixerChannelComponent>(nullptr, "GUITAR", juce::Colour(0xff99ff99))); // Green
+    mixerChannels.push_back(std::make_unique<MixerChannelComponent>(nullptr, "BASS", juce::Colour(0xff99ccff))); // Blue
+    
+    for (auto& ch : mixerChannels)
+        addAndMakeVisible(ch.get());
+
     // --- Title Label ---
-    titleLabel.setText("Pop DAW", juce::dontSendNotification);
-    titleLabel.setFont(juce::FontOptions(32.0f, juce::Font::bold));
+    auto logoTypeface = juce::Typeface::createSystemTypefaceFor(BinaryData::BBHBartleRegular_ttf, BinaryData::BBHBartleRegular_ttfSize);
+    juce::Font logoFont(logoTypeface);
+    logoFont.setHeight(48.0f);
+    
+    titleLabel.setText("POP", juce::dontSendNotification);
+    titleLabel.setFont(logoFont);
     titleLabel.setJustificationType(juce::Justification::centred);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    titleLabel.setColour(juce::Label::textColourId, juce::Colour(0xff222222)); // Dark color for contrast
     addAndMakeVisible(titleLabel);
 
     // --- Status Label ---
@@ -53,24 +110,40 @@ MainComponent::MainComponent()
     newProjectButton.onClick = [this]()
     {
         // Create a new Edit (Tracktion Engine's equivalent of a project/session)
-        auto edit = tracktion::engine::CreateEdit::openOrCreate(
-            engine,
-            juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                .getChildFile("PopDAW")
-                .getChildFile("Untitled.tracktionedit"),
-            tracktion::engine::CreateEdit::forEditing,
-            nullptr,
-            0,
-            {}
-        );
+        auto editFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+                            .getChildFile("PopDAW")
+                            .getChildFile("Untitled.tracktionedit");
+        
+        currentEdit = tracktion::engine::createEmptyEdit(engine, editFile);
 
-        if (edit)
+        if (currentEdit)
         {
-            statusLabel.setText("New project created: " + edit->getName(),
+            statusLabel.setText("New project created: " + currentEdit->getName(),
                                 juce::dontSendNotification);
         }
     };
     addAndMakeVisible(newProjectButton);
+
+    // --- Audio Settings Overlay ---
+    settingsOverlay = std::make_unique<SettingsOverlay>(engine);
+    addChildComponent(settingsOverlay.get());
+
+    // --- Audio Settings Button ---
+    settingsButton.onClick = [this]()
+    {
+        settingsOverlay->setVisible(true);
+        settingsOverlay->setBounds(getLocalBounds());
+    };
+    addAndMakeVisible(settingsButton);
+
+    // --- Transport Buttons ---
+    playButton.onClick = [this]() { if (currentEdit) currentEdit->getTransport().play(false); };
+    stopButton.onClick = [this]() { if (currentEdit) currentEdit->getTransport().stop(false, false); };
+    importAudioButton.onClick = [this]() { /* To be implemented */ };
+    
+    addAndMakeVisible(playButton);
+    addAndMakeVisible(stopButton);
+    addAndMakeVisible(importAudioButton);
 
     // Set initial window size
     setSize(900, 600);
@@ -78,18 +151,19 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
+    setLookAndFeel(nullptr);
 }
 
 //==============================================================================
 void MainComponent::paint(juce::Graphics& g)
 {
-    // Dark background gradient
-    g.fillAll(juce::Colour(0xff1a1a2e));
+    // Warm khaki/sand background
+    g.fillAll(juce::Colour(0xffc2bba8));
 
     // Subtle gradient overlay
     juce::ColourGradient gradient(
-        juce::Colour(0xff16213e), 0.0f, 0.0f,
-        juce::Colour(0xff0f3460), (float) getWidth(), (float) getHeight(),
+        juce::Colour(0xffd2cbb8), 0.0f, 0.0f,
+        juce::Colour(0xffb2ab98), (float) getWidth(), (float) getHeight(),
         false
     );
     g.setGradientFill(gradient);
@@ -105,7 +179,19 @@ void MainComponent::paint(juce::Graphics& g)
 
 void MainComponent::resized()
 {
+    if (settingsOverlay != nullptr)
+        settingsOverlay->setBounds(getLocalBounds());
+
     auto area = getLocalBounds();
+    
+    // Position mixer channels at the bottom
+    auto mixerArea = area.removeFromBottom(250).reduced(20, 10);
+    for (auto& ch : mixerChannels)
+    {
+        ch->setBounds(mixerArea.removeFromLeft(170));
+        mixerArea.removeFromLeft(10); // Spacing
+    }
+
     auto centreArea = area.reduced(40);
 
     // Layout from the centre of the window
@@ -121,8 +207,19 @@ void MainComponent::resized()
     centreArea.removeFromTop(10);
     engineInfoLabel.setBounds(centreArea.removeFromTop(50));
 
-    // Button centred below
+    // Buttons layout
     centreArea.removeFromTop(20);
-    auto buttonArea = centreArea.removeFromTop(40);
-    newProjectButton.setBounds(buttonArea.withSizeKeepingCentre(200, 36));
+    
+    auto buttonRow1 = centreArea.removeFromTop(40);
+    newProjectButton.setBounds(buttonRow1.removeFromLeft(140));
+    buttonRow1.removeFromLeft(20); // spacing
+    settingsButton.setBounds(buttonRow1.removeFromLeft(140));
+    
+    centreArea.removeFromTop(10);
+    auto buttonRow2 = centreArea.removeFromTop(40);
+    playButton.setBounds(buttonRow2.removeFromLeft(80));
+    buttonRow2.removeFromLeft(10);
+    stopButton.setBounds(buttonRow2.removeFromLeft(80));
+    buttonRow2.removeFromLeft(20);
+    importAudioButton.setBounds(buttonRow2.removeFromLeft(140));
 }

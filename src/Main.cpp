@@ -11,6 +11,16 @@
 #include "MainComponent.h"
 
 //==============================================================================
+class PopDAWLogger : public juce::Logger
+{
+public:
+    void logMessage(const juce::String& message) override
+    {
+        std::cout << message.toRawUTF8() << std::endl;
+    }
+};
+
+//==============================================================================
 class PopDAWApplication : public juce::JUCEApplication
 {
 public:
@@ -23,12 +33,16 @@ public:
     //==============================================================================
     void initialise(const juce::String& /*commandLine*/) override
     {
+        logger = std::make_unique<PopDAWLogger>();
+        juce::Logger::setCurrentLogger(logger.get());
         mainWindow = std::make_unique<MainWindow>(getApplicationName());
     }
 
     void shutdown() override
     {
         mainWindow.reset();
+        juce::Logger::setCurrentLogger(nullptr);
+        logger.reset();
     }
 
     void systemRequestedQuit() override
@@ -71,6 +85,7 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
     };
 
+    std::unique_ptr<PopDAWLogger> logger;
     std::unique_ptr<MainWindow> mainWindow;
 };
 
