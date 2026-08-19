@@ -13,6 +13,7 @@
 #include <tracktion_engine/tracktion_engine.h>
 #include "PopLookAndFeel.h"
 #include "MixerChannelComponent.h"
+#include "ClipGridComponent.h"
 
 //==============================================================================
 /**
@@ -40,6 +41,7 @@ private:
 
     // UI Elements
     PopLookAndFeel customLookAndFeel;
+    ClipGridComponent clipGrid;
     std::vector<std::unique_ptr<MixerChannelComponent>> mixerChannels;
     
     juce::Label titleLabel;

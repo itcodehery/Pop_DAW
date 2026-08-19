@@ -58,6 +58,8 @@ target_sources(PopDAW PRIVATE
     src/PopLookAndFeel.h
     src/MixerChannelComponent.cpp
     src/MixerChannelComponent.h
+    src/ClipGridComponent.cpp
+    src/ClipGridComponent.h
 )
 
 # Compile definitions

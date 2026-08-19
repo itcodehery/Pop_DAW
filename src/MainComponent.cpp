@@ -64,10 +64,30 @@ MainComponent::MainComponent()
     for (auto& ch : mixerChannels)
         addAndMakeVisible(ch.get());
 
+    // --- Clip Grid ---
+    addAndMakeVisible(clipGrid);
+    
+    clipGrid.addColumn(juce::Colour(0xffff8a8a)); // Piano
+    if (auto* col = clipGrid.getColumn(0)) {
+        col->addClip("Piano #1", "Q");
+        col->addClip("Piano #2", "W");
+    }
+
+    clipGrid.addColumn(juce::Colour(0xff99ff99)); // Guitar
+    if (auto* col = clipGrid.getColumn(1)) {
+        col->addClip("Guitar #3", "T");
+        col->addClip("Guitar #2", "R");
+        col->addClip("Guitar #1", "E");
+    }
+
+    clipGrid.addColumn(juce::Colour(0xff99ccff)); // Bass
+    if (auto* col = clipGrid.getColumn(2)) {
+        col->addClip("Bass #1", "Y");
+    }
+
     // --- Title Label ---
     auto logoTypeface = juce::Typeface::createSystemTypefaceFor(BinaryData::BBHBartleRegular_ttf, BinaryData::BBHBartleRegular_ttfSize);
-    juce::Font logoFont(logoTypeface);
-    logoFont.setHeight(48.0f);
+    juce::Font logoFont(juce::FontOptions(logoTypeface).withHeight(48.0f));
     
     titleLabel.setText("POP", juce::dontSendNotification);
     titleLabel.setFont(logoFont);
@@ -191,6 +211,9 @@ void MainComponent::resized()
         ch->setBounds(mixerArea.removeFromLeft(170));
         mixerArea.removeFromLeft(10); // Spacing
     }
+    
+    // Position the clip grid above the mixer
+    clipGrid.setBounds(area.reduced(20, 10));
 
     auto centreArea = area.reduced(40);
 
