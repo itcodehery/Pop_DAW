@@ -1,55 +1,5 @@
-/*
-  ==============================================================================
-
-    Pop DAW - Main Application Component Implementation
-
-  ==============================================================================
-*/
-
 #include "MainComponent.h"
 #include <BinaryData.h>
-
-//==============================================================================
-class SettingsOverlay : public juce::Component
-{
-public:
-    SettingsOverlay(tracktion::engine::Engine& engine)
-    {
-        selector.reset(new juce::AudioDeviceSelectorComponent(engine.getDeviceManager().deviceManager, 
-                                                              0, 256, 0, 256, true, true, true, false));
-        addAndMakeVisible(selector.get());
-        
-        closeButton.onClick = [this] { setVisible(false); };
-        addAndMakeVisible(closeButton);
-    }
-
-    void paint(juce::Graphics& g) override
-    {
-        // Dark semi-transparent background to dim the main UI
-        g.fillAll(juce::Colours::black.withAlpha(0.85f));
-        
-        // Solid background for the dialog area
-        auto area = getLocalBounds().reduced(40);
-        g.setColour(juce::Colour(0xff222233));
-        g.fillRoundedRectangle(area.toFloat(), 8.0f);
-        
-        g.setColour(juce::Colours::white);
-        g.setFont(20.0f);
-        g.drawText("Audio Settings", area.removeFromTop(40).toNearestInt(), juce::Justification::centred);
-    }
-
-    void resized() override
-    {
-        auto area = getLocalBounds().reduced(40);
-        area.removeFromTop(40); // Leave space for title
-        closeButton.setBounds(area.removeFromBottom(50).reduced(150, 10));
-        selector->setBounds(area.reduced(10));
-    }
-
-private:
-    std::unique_ptr<juce::AudioDeviceSelectorComponent> selector;
-    juce::TextButton closeButton { "Close" };
-};
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -85,88 +35,22 @@ MainComponent::MainComponent()
         col->addClip("Bass #1", "Y");
     }
 
-    // --- Title Label ---
-    auto logoTypeface = juce::Typeface::createSystemTypefaceFor(BinaryData::BBHBartleRegular_ttf, BinaryData::BBHBartleRegular_ttfSize);
-    juce::Font logoFont(juce::FontOptions(logoTypeface).withHeight(48.0f));
+    // --- Sidebar ---
+    addAndMakeVisible(sidebar);
+
+    // --- Top Bar ---
+    addAndMakeVisible(topBar);
     
-    titleLabel.setText("POP", juce::dontSendNotification);
-    titleLabel.setFont(logoFont);
-    titleLabel.setJustificationType(juce::Justification::centred);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colour(0xff222222)); // Dark color for contrast
-    addAndMakeVisible(titleLabel);
-
-    // --- Status Label ---
-    juce::String statusText = "Engine Status: ";
-    statusText += "Active";
-    statusText += "  |  Sample Rate: " + juce::String(engine.getDeviceManager().getSampleRate()) + " Hz";
-    statusText += "  |  Buffer Size: " + juce::String(engine.getDeviceManager().getBlockSize()) + " samples";
-
-    statusLabel.setText(statusText, juce::dontSendNotification);
-    statusLabel.setFont(juce::FontOptions(14.0f));
-    statusLabel.setJustificationType(juce::Justification::centred);
-    statusLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
-    addAndMakeVisible(statusLabel);
-
-    // --- Engine Info Label ---
-    juce::String infoText;
-    infoText += "Powered by Tracktion Engine\n";
-    infoText += "Audio Backend: ";
-
-    auto& dm = engine.getDeviceManager();
-    if (auto* currentDevice = dm.deviceManager.getCurrentAudioDevice())
-        infoText += currentDevice->getTypeName();
-    else
-        infoText += "No audio device";
-
-    engineInfoLabel.setText(infoText, juce::dontSendNotification);
-    engineInfoLabel.setFont(juce::FontOptions(13.0f));
-    engineInfoLabel.setJustificationType(juce::Justification::centred);
-    engineInfoLabel.setColour(juce::Label::textColourId, juce::Colour(0xff888888));
-    addAndMakeVisible(engineInfoLabel);
-
-    // --- New Project Button ---
-    newProjectButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff4a90d9));
-    newProjectButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
-    newProjectButton.onClick = [this]()
-    {
-        // Create a new Edit (Tracktion Engine's equivalent of a project/session)
-        auto editFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                            .getChildFile("PopDAW")
-                            .getChildFile("Untitled.tracktionedit");
-        
-        currentEdit = tracktion::engine::createEmptyEdit(engine, editFile);
-
-        if (currentEdit)
-        {
-            statusLabel.setText("New project created: " + currentEdit->getName(),
-                                juce::dontSendNotification);
-        }
+    // --- Add Plugin Box ---
+    addAndMakeVisible(addPluginBox);
+    addPluginBox.onClick = [this]() {
+        PluginHelper::showPluginMenu(engine, &addPluginBox, [this](const juce::PluginDescription& desc) {
+            juce::Logger::writeToLog("Selected plugin: " + desc.name);
+            // We will load the plugin here soon
+        });
     };
-    addAndMakeVisible(newProjectButton);
 
-    // --- Audio Settings Overlay ---
-    settingsOverlay = std::make_unique<SettingsOverlay>(engine);
-    addChildComponent(settingsOverlay.get());
-
-    // --- Audio Settings Button ---
-    settingsButton.onClick = [this]()
-    {
-        settingsOverlay->setVisible(true);
-        settingsOverlay->setBounds(getLocalBounds());
-    };
-    addAndMakeVisible(settingsButton);
-
-    // --- Transport Buttons ---
-    playButton.onClick = [this]() { if (currentEdit) currentEdit->getTransport().play(false); };
-    stopButton.onClick = [this]() { if (currentEdit) currentEdit->getTransport().stop(false, false); };
-    importAudioButton.onClick = [this]() { /* To be implemented */ };
-    
-    addAndMakeVisible(playButton);
-    addAndMakeVisible(stopButton);
-    addAndMakeVisible(importAudioButton);
-
-    // Set initial window size
-    setSize(900, 600);
+    setSize(1600, 900);
 }
 
 MainComponent::~MainComponent()
@@ -178,71 +62,68 @@ MainComponent::~MainComponent()
 void MainComponent::paint(juce::Graphics& g)
 {
     // Warm khaki/sand background
-    g.fillAll(juce::Colour(0xffc2bba8));
+    g.fillAll(juce::Colour(0xffcdc4b3));
 
-    // Subtle gradient overlay
-    juce::ColourGradient gradient(
-        juce::Colour(0xffd2cbb8), 0.0f, 0.0f,
-        juce::Colour(0xffb2ab98), (float) getWidth(), (float) getHeight(),
-        false
-    );
-    g.setGradientFill(gradient);
-    g.fillRect(getLocalBounds());
-
-    // Version text in bottom-right
-    g.setColour(juce::Colour(0xff555555));
-    g.setFont(juce::FontOptions(11.0f));
-    g.drawText("v" + juce::String(JUCE_APPLICATION_VERSION_STRING),
-               getLocalBounds().removeFromBottom(25).removeFromRight(100),
-               juce::Justification::centredRight);
+    // Draw structural lines
+    g.setColour(juce::Colour(0xff111111));
+    
+    float topBarHeight = 70.0f;
+    float sidebarWidth = 360.0f;
+    float mixerHeight = 250.0f;
+    
+    // Line under top bar
+    g.fillRect(0.0f, topBarHeight, (float)getWidth(), 2.0f);
+    
+    // Line separating right sidebar
+    g.fillRect((float)getWidth() - sidebarWidth, topBarHeight, 2.0f, (float)getHeight() - topBarHeight);
+    
+    // Line separating mixer
+    g.fillRect(0.0f, (float)getHeight() - mixerHeight, (float)getWidth() - sidebarWidth, 2.0f);
+    
+    // Vertical column separator lines spanning the whole workspace
+    int gutterWidth = 30;
+    float startX = gutterWidth - 1.0f;
+    g.fillRect(startX, topBarHeight, 1.0f, (float)getHeight() - topBarHeight); // gutter line
+    
+    startX = gutterWidth + 20.0f + 190.0f + 5.0f;
+    for (int i=0; i<3; ++i) { // 3 internal separators
+        g.fillRect(startX, topBarHeight, 1.0f, (float)getHeight() - topBarHeight);
+        startX += 200.0f; // 190 block + 10 spacing
+    }
 }
 
 void MainComponent::resized()
 {
-    if (settingsOverlay != nullptr)
-        settingsOverlay->setBounds(getLocalBounds());
-
     auto area = getLocalBounds();
     
-    // Position mixer channels at the bottom
-    auto mixerArea = area.removeFromBottom(250).reduced(20, 10);
+    int topBarHeight = 70;
+    int sidebarWidth = 360;
+    int mixerHeight = 250;
+    
+    topBar.setBounds(area.removeFromTop(topBarHeight));
+    
+    area.removeFromTop(2); // Border
+    
+    auto sidebarArea = area.removeFromRight(sidebarWidth);
+    sidebarArea.removeFromLeft(2); // Border
+    sidebar.setBounds(sidebarArea.reduced(20));
+    
+    auto workspaceArea = area;
+    
+    auto mixerArea = workspaceArea.removeFromBottom(mixerHeight);
+    mixerArea.removeFromTop(2); // Border
+    
+    // Mixer alignment
+    int gutterWidth = 30; // Matches grid
+    auto mixerContentArea = mixerArea.withTrimmedLeft(gutterWidth).reduced(20, 10);
     for (auto& ch : mixerChannels)
     {
-        ch->setBounds(mixerArea.removeFromLeft(170));
-        mixerArea.removeFromLeft(10); // Spacing
+        ch->setBounds(mixerContentArea.removeFromLeft(190));
+        mixerContentArea.removeFromLeft(10); // spacing
     }
     
-    // Position the clip grid above the mixer
-    clipGrid.setBounds(area.reduced(20, 10));
-
-    auto centreArea = area.reduced(40);
-
-    // Layout from the centre of the window
-    auto topSection = centreArea.removeFromTop(centreArea.getHeight() / 2);
-
-    // Title in the upper-centre area
-    titleLabel.setBounds(topSection.removeFromBottom(50));
-
-    // Status below the title
-    statusLabel.setBounds(centreArea.removeFromTop(30));
-
-    // Engine info below status
-    centreArea.removeFromTop(10);
-    engineInfoLabel.setBounds(centreArea.removeFromTop(50));
-
-    // Buttons layout
-    centreArea.removeFromTop(20);
+    // Add Plugin Box
+    addPluginBox.setBounds(mixerContentArea.removeFromLeft(190).withTrimmedBottom(20));
     
-    auto buttonRow1 = centreArea.removeFromTop(40);
-    newProjectButton.setBounds(buttonRow1.removeFromLeft(140));
-    buttonRow1.removeFromLeft(20); // spacing
-    settingsButton.setBounds(buttonRow1.removeFromLeft(140));
-    
-    centreArea.removeFromTop(10);
-    auto buttonRow2 = centreArea.removeFromTop(40);
-    playButton.setBounds(buttonRow2.removeFromLeft(80));
-    buttonRow2.removeFromLeft(10);
-    stopButton.setBounds(buttonRow2.removeFromLeft(80));
-    buttonRow2.removeFromLeft(20);
-    importAudioButton.setBounds(buttonRow2.removeFromLeft(140));
+    clipGrid.setBounds(workspaceArea);
 }

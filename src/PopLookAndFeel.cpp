@@ -57,3 +57,32 @@ void PopLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button& butto
     g.setColour(baseColour);
     g.fillRoundedRectangle(bounds, 4.0f);
 }
+
+void PopLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
+                                      const float rotaryStartAngle, const float rotaryEndAngle, juce::Slider& slider)
+{
+    auto radius = (float) juce::jmin (width / 2, height / 2) - 4.0f;
+    auto centreX = (float) x + (float) width  * 0.5f;
+    auto centreY = (float) y + (float) height * 0.5f;
+    auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
+
+    // Track Background
+    juce::Path backgroundArc;
+    backgroundArc.addCentredArc (centreX, centreY, radius, radius, 0.0f, rotaryStartAngle, rotaryEndAngle, true);
+    g.setColour (juce::Colours::white.withAlpha(0.2f));
+    g.strokePath (backgroundArc, juce::PathStrokeType (3.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::rounded));
+
+    // Value Arc
+    juce::Path valueArc;
+    valueArc.addCentredArc (centreX, centreY, radius, radius, 0.0f, rotaryStartAngle, angle, true);
+    g.setColour (slider.findColour(juce::Slider::rotarySliderFillColourId));
+    g.strokePath (valueArc, juce::PathStrokeType (3.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::rounded));
+    
+    // Pointer line
+    juce::Path pointer;
+    auto pointerLength = radius * 0.4f;
+    pointer.startNewSubPath(centreX, centreY);
+    pointer.lineTo(centreX + pointerLength * std::sin (angle),
+                   centreY - pointerLength * std::cos (angle));
+    g.strokePath (pointer, juce::PathStrokeType (2.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::rounded));
+}

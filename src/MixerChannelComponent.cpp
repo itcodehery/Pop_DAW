@@ -4,67 +4,74 @@ MixerChannelComponent::MixerChannelComponent(tracktion::engine::Track::Ptr t, ju
     : track(t), trackName(name), baseColor(color)
 {
     // Left side controls
-    muteButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff333333));
+    muteButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff221111));
+    muteButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.6f));
     muteButton.setClickingTogglesState(true);
     addAndMakeVisible(muteButton);
     
-    soloButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff333333));
+    soloButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff221111));
+    soloButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.6f));
     soloButton.setClickingTogglesState(true);
     addAndMakeVisible(soloButton);
     
-    pluginButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff3a3a44));
+    pluginButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff332222));
     addAndMakeVisible(pluginButton);
 
     // Right side fader
+    volumeFader.setSliderStyle(juce::Slider::LinearVertical);
+    volumeFader.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     volumeFader.setColour(juce::Slider::thumbColourId, baseColor);
+    volumeFader.setColour(juce::Slider::trackColourId, juce::Colours::transparentWhite);
+    volumeFader.setColour(juce::Slider::backgroundColourId, juce::Colours::white.withAlpha(0.05f));
     volumeFader.setRange(-60.0, 6.0, 0.1);
     volumeFader.setValue(0.0);
     volumeFader.onValueChange = [this]()
     {
         dbLabel.setText(juce::String(volumeFader.getValue(), 1) + " dB", juce::dontSendNotification);
-        // TODO: actually map this to the track's volume plugin
     };
     addAndMakeVisible(volumeFader);
 
     dbLabel.setText("0.0 dB", juce::dontSendNotification);
     dbLabel.setJustificationType(juce::Justification::centred);
-    dbLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
+    dbLabel.setColour(juce::Label::textColourId, juce::Colours::white.withAlpha(0.5f));
     dbLabel.setFont(juce::FontOptions(11.0f));
     addAndMakeVisible(dbLabel);
 }
 
-MixerChannelComponent::~MixerChannelComponent()
-{
-}
+MixerChannelComponent::~MixerChannelComponent() {}
 
 void MixerChannelComponent::paint(juce::Graphics& g)
 {
     auto area = getLocalBounds();
-    
-    // Split the background into two halves exactly like the mockup
-    auto leftArea = area.removeFromLeft(area.getWidth() / 2);
+    auto leftArea = area.removeFromLeft(area.getWidth() * 0.55f);
     auto rightArea = area;
     
-    // Left half (Dark panel)
-    g.setColour(juce::Colour(0xff1e1212)); // dark brownish black
-    g.fillRoundedRectangle(leftArea.toFloat(), 6.0f);
+    // Dark Panel
+    g.setColour(juce::Colour(0xff180b0b));
+    g.fillRoundedRectangle(leftArea.toFloat(), 4.0f);
     
-    // Right half (Mixer panel)
-    g.setColour(juce::Colour(0xff4a4545)); // lighter brown/grey
-    g.fillRoundedRectangle(rightArea.toFloat(), 6.0f);
+    // Grey Panel
+    g.setColour(juce::Colour(0xff45474a));
+    g.fillRoundedRectangle(rightArea.toFloat(), 4.0f);
     
-    // Draw the big colored trigger pad on the left
+    // Big Circle
     g.setColour(baseColor);
-    float padSize = 60.0f;
-    juce::Rectangle<float> padArea(leftArea.getCentreX() - padSize/2, 40.0f, padSize, padSize);
+    float padSize = 80.0f;
+    juce::Rectangle<float> padArea(leftArea.getCentreX() - padSize/2.0f, 30.0f, padSize, padSize);
     g.fillEllipse(padArea);
     
-    // Draw track name
+    // Piano Icon
     g.setColour(juce::Colours::white);
-    g.setFont(juce::FontOptions(14.0f, juce::Font::bold));
-    g.drawText(trackName, leftArea.withY(110).withHeight(30), juce::Justification::centred);
+    juce::Rectangle<float> pianoIcon(leftArea.getRight() - 25.0f, 15.0f, 14.0f, 10.0f);
+    g.drawRect(pianoIcon, 1.0f);
+    g.fillRect(pianoIcon.getX() + 3.0f, pianoIcon.getY(), 2.0f, 6.0f);
+    g.fillRect(pianoIcon.getX() + 9.0f, pianoIcon.getY(), 2.0f, 6.0f);
     
-    // Draw "MIXER" title on the right
+    // Track Name
+    g.setFont(juce::FontOptions(14.0f, juce::Font::bold));
+    g.drawText(trackName, leftArea.withY(120).withHeight(20), juce::Justification::centred);
+    
+    // MIXER Title
     g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
     g.drawText("MIXER", rightArea.withY(15).withHeight(20), juce::Justification::centred);
 }
@@ -72,21 +79,20 @@ void MixerChannelComponent::paint(juce::Graphics& g)
 void MixerChannelComponent::resized()
 {
     auto area = getLocalBounds();
-    auto leftArea = area.removeFromLeft(area.getWidth() / 2);
+    auto leftArea = area.removeFromLeft(area.getWidth() * 0.55f);
     auto rightArea = area;
     
-    // Position M/S buttons on the left
-    auto msArea = leftArea.withY(140).withHeight(25).reduced(20, 0);
+    auto msArea = leftArea.withY(145).withHeight(22).reduced(25, 0);
     muteButton.setBounds(msArea.removeFromLeft(msArea.getWidth() / 2).reduced(2));
+    muteButton.setButtonText("M");
     soloButton.setBounds(msArea.reduced(2));
+    soloButton.setButtonText("S");
     
-    // Position Plugin button
-    pluginButton.setBounds(leftArea.withY(175).withHeight(30).reduced(20, 0));
+    pluginButton.setBounds(leftArea.withY(180).withHeight(30).reduced(20, 0));
+    pluginButton.setButtonText("Plugin");
     
-    // Position Fader on the right
     auto faderArea = rightArea.withY(45).withBottom(getHeight() - 30);
     volumeFader.setBounds(faderArea);
     
-    // Position dB label
     dbLabel.setBounds(rightArea.withTop(getHeight() - 25).withHeight(20));
 }

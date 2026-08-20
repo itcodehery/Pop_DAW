@@ -13,6 +13,9 @@ public:
     void drawButtonBackground(juce::Graphics&, juce::Button&, const juce::Colour& backgroundColour,
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
                               
+    void drawRotarySlider(juce::Graphics&, int x, int y, int width, int height, float sliderPos,
+                          const float rotaryStartAngle, const float rotaryEndAngle, juce::Slider&) override;
+                              
     juce::Typeface::Ptr getTypefaceForFont(const juce::Font& font) override;
 
 private:

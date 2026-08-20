@@ -12,36 +12,27 @@ void ClipBlockComponent::paint(juce::Graphics& g)
     
     // Fill block background
     g.setColour(isPlaying ? baseColor.brighter(0.2f) : baseColor);
-    g.fillRoundedRectangle(bounds, 6.0f);
+    g.fillRoundedRectangle(bounds, 4.0f);
     
-    // Draw block border
-    g.setColour(juce::Colours::black.withAlpha(0.6f));
-    g.drawRoundedRectangle(bounds, 6.0f, 2.0f);
+    // Draw block border (solid thin black)
+    g.setColour(juce::Colour(0xff111111));
+    g.drawRoundedRectangle(bounds, 4.0f, 1.5f);
     
-    // Top bar for name and key
-    auto topBar = bounds.removeFromTop(20.0f);
-    g.setColour(juce::Colours::black.withAlpha(0.2f));
-    g.fillPath([](juce::Rectangle<float> r) {
-        juce::Path p;
-        p.addRoundedRectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(), 6.0f, 6.0f, true, true, false, false);
-        return p;
-    }(topBar));
-    
-    g.setColour(juce::Colour(0xff222222));
+    // Top text
     g.setFont(juce::FontOptions(10.0f, juce::Font::bold));
-    g.drawText(clipName.toUpperCase(), topBar.reduced(6.0f, 0).toNearestInt(), juce::Justification::centredLeft);
-    g.drawText("KEY : " + keyBinding.toUpperCase(), topBar.reduced(6.0f, 0).toNearestInt(), juce::Justification::centredRight);
+    auto textArea = bounds.removeFromTop(20.0f).reduced(6.0f, 0).toNearestInt();
+    g.drawText(clipName.toUpperCase(), textArea, juce::Justification::centredLeft);
+    g.drawText("KEY : " + keyBinding.toUpperCase(), textArea, juce::Justification::centredRight);
     
     // Draw dummy waveform
-    g.setColour(juce::Colour(0xff111111));
-    auto waveArea = bounds.reduced(10.0f, 15.0f);
+    auto waveArea = bounds.reduced(10.0f, 10.0f);
     float midY = waveArea.getCentreY();
     
     juce::Random rand((int)clipName.hashCode());
     for (float x = waveArea.getX(); x < waveArea.getRight(); x += 4.0f)
     {
         float amplitude = rand.nextFloat() * waveArea.getHeight() * 0.4f + 2.0f;
-        g.fillRoundedRectangle(x, midY - amplitude, 2.5f, amplitude * 2.0f, 1.0f);
+        g.fillRoundedRectangle(x, midY - amplitude, 2.5f, amplitude * 2.0f, 1.5f);
     }
 }
 
@@ -63,21 +54,17 @@ void ClipGridColumn::addClip(juce::String name, juce::String keyBind)
     resized();
 }
 
-void ClipGridColumn::paint(juce::Graphics& g)
+void ClipGridColumn::paint(juce::Graphics&)
 {
-    // Draw vertical separator line on the right side
-    g.setColour(juce::Colours::black.withAlpha(0.3f));
-    g.fillRect(getWidth() - 1, 0, 1, getHeight());
 }
 
 void ClipGridColumn::resized()
 {
-    auto area = getLocalBounds().reduced(10);
-    area.removeFromRight(1); // Keep clear of the separator
+    auto area = getLocalBounds().reduced(2, 10);
     
     for (auto& clip : clips)
     {
-        clip->setBounds(area.removeFromTop(100));
+        clip->setBounds(area.removeFromTop(90));
         area.removeFromTop(10); // Vertical spacing between clips
     }
 }
@@ -105,19 +92,30 @@ ClipGridColumn* ClipGridComponent::getColumn(int index)
     return nullptr;
 }
 
-void ClipGridComponent::paint(juce::Graphics&)
+void ClipGridComponent::paint(juce::Graphics& g)
 {
-    // Background is inherited from MainComponent
+    g.setColour(juce::Colour(0xff111111));
+    
+    // Row markers
+    int y = 10;
+    for (int i=0; i<10; ++i) {
+        g.fillRect(10, y + 45, 10, 1);
+        y += 100; // 90 block height + 10 spacing
+    }
 }
 
 void ClipGridComponent::resized()
 {
     auto area = getLocalBounds();
-    int colWidth = 170; // Must match the mixer channel width
+    area.removeFromLeft(30); // Leave space for gutter
+    area.reduce(20, 10);     // Padding
+    
+    int colWidth = 190;
     int spacing = 10;
     
     for (auto& col : columns)
     {
-        col->setBounds(area.removeFromLeft(colWidth + spacing));
+        col->setBounds(area.removeFromLeft(colWidth));
+        area.removeFromLeft(spacing);
     }
 }

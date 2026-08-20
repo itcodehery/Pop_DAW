@@ -60,6 +60,10 @@ target_sources(PopDAW PRIVATE
     src/MixerChannelComponent.h
     src/ClipGridComponent.cpp
     src/ClipGridComponent.h
+    src/SidebarComponent.cpp
+    src/SidebarComponent.h
+    src/TopBarComponent.cpp
+    src/TopBarComponent.h
 )
 
 # Compile definitions
