@@ -53,10 +53,8 @@ public:
 private:
     static void scanPluginsAsync(tracktion::engine::Engine& engine)
     {
-        // Simple async scan using JUCE
-        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, 
-                                               "Scanning Plugins", 
-                                               "Scanning for VST3 and LV2 plugins in standard directories... Check terminal for progress. This may take a while.");
+        // Simple async scan using JUCE - run entirely in background without popups
+        juce::Logger::writeToLog("Scanning for VST3 and LV2 plugins in standard directories... Check terminal for progress.");
                                                
         // In a real app, this should be on a background thread with a progress bar.
         // For simplicity, we just trigger a background thread here.
@@ -79,7 +77,8 @@ private:
                 }
             }
             
-            juce::Logger::writeToLog("Plugin scan complete! Found " + juce::String(knownList.getNumTypes()) + " plugins.");
+            int count = knownList.getNumTypes();
+            juce::Logger::writeToLog("Plugin scan complete! Found " + juce::String(count) + " plugins.");
             
             // Save to XML
             #if JUCE_64BIT
@@ -92,6 +91,12 @@ private:
             {
                 engine.getPropertyStorage().setXmlProperty(settingId, *xml);
             }
+            
+            juce::MessageManager::callAsync([count]() {
+                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
+                                                       "Scan Complete",
+                                                       "Found " + juce::String(count) + " plugins. Click Plugin button again to view them.");
+            });
         });
     }
 };

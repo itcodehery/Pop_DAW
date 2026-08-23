@@ -64,6 +64,8 @@ target_sources(PopDAW PRIVATE
     src/SidebarComponent.h
     src/TopBarComponent.cpp
     src/TopBarComponent.h
+    src/SettingsComponent.cpp
+    src/SettingsComponent.h
 )
 
 # Compile definitions

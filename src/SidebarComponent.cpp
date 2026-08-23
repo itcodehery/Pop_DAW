@@ -10,7 +10,7 @@ ActiveControllerComponent::ActiveControllerComponent()
     auto setupKnob = [this](juce::Slider& knob, juce::Label& label) {
         knob.setRange(0.0, 1.0, 0.01);
         knob.setValue(0.5);
-        knob.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xff4a90e2)); // Default blue
+        knob.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xffffb380)); // Pastel orange
         addAndMakeVisible(knob);
         
         label.setJustificationType(juce::Justification::centred);
@@ -31,7 +31,7 @@ void ActiveControllerComponent::paint(juce::Graphics& g)
 {
     auto area = getLocalBounds().toFloat();
     
-    g.setColour(juce::Colour(0xff1e1212)); // Dark background
+    g.setColour(juce::Colour(0xff2c2d30)); // Dark grey background
     g.fillRoundedRectangle(area, 6.0f);
 
     g.setColour(juce::Colours::white);
@@ -98,14 +98,14 @@ void ActiveEffectsComponent::paint(juce::Graphics& g)
 {
     auto area = getLocalBounds().toFloat();
     
-    g.setColour(juce::Colour(0xff1e1212));
+    g.setColour(juce::Colour(0xff2c2d30));
     g.fillRoundedRectangle(area, 6.0f);
     
     g.setColour(juce::Colours::white);
     g.setFont(juce::FontOptions(12.0f, juce::Font::bold));
     g.drawText("ACTIVE EFFECTS", area.removeFromTop(40).reduced(20, 0).toNearestInt(), juce::Justification::centredLeft);
     
-    g.setColour(juce::Colour(0xffe28e4a)); // Orange ENABLED text
+    g.setColour(juce::Colour(0xffffb380)); // Pastel Orange ENABLED text
     g.drawText("ENABLED", getLocalBounds().removeFromTop(40).reduced(20, 0), juce::Justification::centredRight);
     
     // Separator
@@ -117,7 +117,7 @@ void ActiveEffectsComponent::paint(juce::Graphics& g)
     for (const auto& effectName : dummyEffects)
     {
         auto slot = slotsArea.removeFromTop(36);
-        g.setColour(juce::Colour(0xff2a2020));
+        g.setColour(juce::Colour(0xff3a3c40));
         g.fillRoundedRectangle(slot.toFloat(), 4.0f);
         
         g.setColour(juce::Colours::white);
