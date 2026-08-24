@@ -380,6 +380,11 @@ void TimelineComponent::layoutAllLanes()
     }
 }
 
+void TimelineComponent::resized()
+{
+    layoutAllLanes();
+}
+
 void TimelineComponent::paint(juce::Graphics& g)
 {
     // Background

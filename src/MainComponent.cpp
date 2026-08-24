@@ -5,7 +5,7 @@
 MainComponent::MainComponent()
 {
     setLookAndFeel(&customLookAndFeel);
-    engine.getDeviceManager().initialise(2, 2);
+    engine.getDeviceManager().initialise(0, 2);
     engine.getPluginManager().initialise();
 
     juce::File editFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("PopDAW_Session.tracktionedit");

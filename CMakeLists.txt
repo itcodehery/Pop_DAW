@@ -36,6 +36,12 @@ add_subdirectory(libs/tracktion_engine/modules)
 set_property(GLOBAL PROPERTY USE_FOLDERS YES)
 option(JUCE_ENABLE_MODULE_SOURCE_GROUPS "Enable Module Source Groups" ON)
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+find_package(Qt6 COMPONENTS Core Gui Quick QuickControls2 REQUIRED)
+
 # Create the main GUI application
 juce_add_gui_app(PopDAW
     BUNDLE_ID "com.popdaw.app"
@@ -52,6 +58,13 @@ juce_generate_juce_header(PopDAW)
 # Source files
 target_sources(PopDAW PRIVATE
     src/Main.cpp
+    src/resources.qrc
+    src/EngineController.cpp
+    src/EngineController.h
+    src/ClipListModel.cpp
+    src/ClipListModel.h
+    src/TrackListModel.cpp
+    src/TrackListModel.h
     src/MainComponent.cpp
     src/MainComponent.h
     src/PopLookAndFeel.cpp
@@ -78,6 +91,10 @@ target_compile_definitions(PopDAW PRIVATE
     JUCE_PLUGINHOST_VST3=1
     JUCE_PLUGINHOST_LV2=1
     JUCE_MODAL_LOOPS_PERMITTED=1
+    JUCE_USE_MP3AUDIOFORMAT=1
+    JUCE_USE_FLAC=1
+    JUCE_USE_OGGVORBIS=1
+    QT_NO_KEYWORDS
 )
 
 # Binary Data
@@ -110,4 +127,8 @@ target_link_libraries(PopDAW PRIVATE
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
+    Qt6::QuickControls2
 )

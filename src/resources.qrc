@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/components/TopBar.qml</file>
+        <file>qml/components/TrackHeaders.qml</file>
+        <file>qml/components/TimelineView.qml</file>
+    </qresource>
+</RCC>

@@ -7,87 +7,52 @@
   ==============================================================================
 */
 
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+#include <QTimer>
 #include <JuceHeader.h>
-#include "MainComponent.h"
+#include <tracktion_engine/tracktion_engine.h>
 
-//==============================================================================
-class PopDAWLogger : public juce::Logger
+#include <QQmlContext>
+#include <QQmlEngine>
+#include "EngineController.h"
+#include "TrackListModel.h"
+#include "ClipListModel.h"
+
+int main(int argc, char *argv[])
 {
-public:
-    void logMessage(const juce::String& message) override
-    {
-        std::cout << message.toRawUTF8() << std::endl;
-    }
-};
+    qmlRegisterUncreatableType<ClipListModel>("PopDAW", 1, 0, "ClipListModel", "Used for roles only");
 
-//==============================================================================
-class PopDAWApplication : public juce::JUCEApplication
-{
-public:
-    PopDAWApplication() = default;
+    // Initialize JUCE completely so Tracktion works
+    juce::ScopedJuceInitialiser_GUI juceInit;
 
-    const juce::String getApplicationName() override { return JUCE_APPLICATION_NAME_STRING; }
-    const juce::String getApplicationVersion() override { return JUCE_APPLICATION_VERSION_STRING; }
-    bool moreThanOneInstanceAllowed() override { return false; }
+    QGuiApplication app(argc, argv);
 
-    //==============================================================================
-    void initialise(const juce::String& /*commandLine*/) override
-    {
-        logger = std::make_unique<PopDAWLogger>();
-        juce::Logger::setCurrentLogger(logger.get());
-        mainWindow = std::make_unique<MainWindow>(getApplicationName());
-    }
+    // Tracktion engine instance
+    auto engine = std::make_unique<tracktion::engine::Engine>("Pop DAW");
+    engine->getDeviceManager().initialise(0, 2);
+    engine->getPluginManager().initialise();
 
-    void shutdown() override
-    {
-        mainWindow.reset();
-        juce::Logger::setCurrentLogger(nullptr);
-        logger.reset();
-    }
+    juce::File editFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("PopDAW_Session.tracktionedit");
+    auto currentEdit = tracktion::engine::createEmptyEdit(*engine, editFile);
+    currentEdit->getTransport().ensureContextAllocated();
 
-    void systemRequestedQuit() override
-    {
-        quit();
-    }
+    EngineController engineController(*engine, currentEdit.get());
+    TrackListModel trackListModel(currentEdit.get());
 
-    void anotherInstanceStarted(const juce::String& /*commandLine*/) override {}
+    // Pump JUCE messages using Qt's event loop
+    QTimer juceEventPump;
+    QObject::connect(&juceEventPump, &QTimer::timeout, [] {
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(2);
+    });
+    juceEventPump.start(10); // Pump every 10ms
 
-private:
-    //==============================================================================
-    class MainWindow : public juce::DocumentWindow
-    {
-    public:
-        explicit MainWindow(const juce::String& name)
-            : DocumentWindow(name,
-                             juce::Desktop::getInstance().getDefaultLookAndFeel()
-                                 .findColour(ResizableWindow::backgroundColourId),
-                             DocumentWindow::allButtons)
-        {
-            setUsingNativeTitleBar(true);
-            setContentOwned(new MainComponent(), true);
+    QQmlApplicationEngine qmlEngine;
+    qmlEngine.rootContext()->setContextProperty("engineController", &engineController);
+    qmlEngine.rootContext()->setContextProperty("trackListModel", &trackListModel);
 
-            #if JUCE_IOS || JUCE_ANDROID
-            setFullScreen(true);
-            #else
-            setResizable(true, true);
-            centreWithSize(getWidth(), getHeight());
-            #endif
+    const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
+    qmlEngine.load(url);
 
-            setVisible(true);
-        }
-
-        void closeButtonPressed() override
-        {
-            JUCEApplication::getInstance()->systemRequestedQuit();
-        }
-
-    private:
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
-    };
-
-    std::unique_ptr<PopDAWLogger> logger;
-    std::unique_ptr<MainWindow> mainWindow;
-};
-
-//==============================================================================
-START_JUCE_APPLICATION(PopDAWApplication)
+    return app.exec();
+}
