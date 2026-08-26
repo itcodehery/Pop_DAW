@@ -4,5 +4,9 @@
         <file>qml/components/TopBar.qml</file>
         <file>qml/components/TrackHeaders.qml</file>
         <file>qml/components/TimelineView.qml</file>
+        <file>qml/components/MixerPanel.qml</file>
+        <file>qml/components/Sidebar.qml</file>
+        <file alias="fonts/BBHBartle-Regular.ttf">../assets/fonts/BBHBartle-Regular.ttf</file>
+        <file alias="fonts/DMSans.ttf">../assets/fonts/DMSans.ttf</file>
     </qresource>
 </RCC>

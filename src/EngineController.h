@@ -13,6 +13,8 @@ class EngineController : public QObject
     Q_PROPERTY(QString timecode READ timecode NOTIFY timecodeChanged)
     Q_PROPERTY(double bpm READ bpm NOTIFY bpmChanged)
 
+    Q_PROPERTY(double positionSeconds READ positionSeconds NOTIFY positionSecondsChanged)
+
 public:
     explicit EngineController(tracktion::engine::Engine& engine, 
                               tracktion::engine::Edit* edit, 
@@ -23,17 +25,26 @@ public:
     bool isRecording() const;
     QString timecode() const;
     double bpm() const;
+    double positionSeconds() const;
 
 public Q_SLOTS:
     void togglePlay();
     void stop();
     void toggleRecord();
+    void showAudioSettings();
+    void showPluginSettings();
+    void showNewProjectDialog();
+    void showExportDialog();
+    void setPositionSeconds(double seconds);
+    void insertAudioFile();
+    void insertAudioFileToTrack(int trackIndex, const QString& fileUrl, double positionSeconds);
 
 Q_SIGNALS:
     void isPlayingChanged();
     void isRecordingChanged();
     void timecodeChanged();
     void bpmChanged();
+    void positionSecondsChanged();
 
 private Q_SLOTS:
     void updateState();
@@ -46,6 +57,7 @@ private:
     bool lastIsRecording = false;
     QString lastTimecode;
     double lastBpm = 120.0;
+    double lastPositionSeconds = 0.0;
     
     QTimer updateTimer;
 };

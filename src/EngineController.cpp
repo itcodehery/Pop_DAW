@@ -1,4 +1,8 @@
 #include "EngineController.h"
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_devices/juce_audio_devices.h>
+#include <tracktion_engine/tracktion_engine.h>
+#include <cmath>
 
 EngineController::EngineController(tracktion::engine::Engine& eng, tracktion::engine::Edit* ed, QObject* parent)
     : QObject(parent), engine(eng), edit(ed)
@@ -59,6 +63,12 @@ void EngineController::stop()
     transport.setPosition(tracktion::TimePosition::fromSeconds(0.0));
 }
 
+void EngineController::setPositionSeconds(double seconds)
+{
+    if (!edit) return;
+    edit->getTransport().setPosition(tracktion::TimePosition::fromSeconds(seconds));
+}
+
 void EngineController::toggleRecord()
 {
     if (!edit) return;
@@ -67,6 +77,98 @@ void EngineController::toggleRecord()
         transport.record(false);
     else
         transport.record(true);
+}
+
+double EngineController::positionSeconds() const
+{
+    if (!edit) return 0.0;
+    return edit->getTransport().getPosition().inSeconds();
+}
+
+void EngineController::showAudioSettings()
+{
+    // Use JUCE's AudioDeviceSelectorComponent in a DialogWindow
+    auto* selector = new juce::AudioDeviceSelectorComponent(
+        engine.getDeviceManager().deviceManager,
+        0, 256, 0, 256,
+        true, true, true, false);
+
+    selector->setSize(500, 400);
+
+    juce::DialogWindow::LaunchOptions options;
+    options.content.setOwned(selector);
+    options.dialogTitle = "Audio Settings";
+    options.dialogBackgroundColour = juce::Colour(0xff323336);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    options.launchAsync();
+}
+
+void EngineController::showPluginSettings()
+{
+    auto* pluginListComp = new juce::PluginListComponent(
+        engine.getPluginManager().pluginFormatManager,
+        engine.getPluginManager().knownPluginList,
+        juce::File(),
+        nullptr,
+        true);
+
+    pluginListComp->setSize(800, 600);
+
+    juce::DialogWindow::LaunchOptions options;
+    options.content.setOwned(pluginListComp);
+    options.dialogTitle = "Plugin Manager";
+    options.dialogBackgroundColour = juce::Colour(0xff323336);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = true;
+    options.launchAsync();
+}
+
+void EngineController::showNewProjectDialog()
+{
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "New Project", "New Project dialog placeholder.");
+}
+
+void EngineController::showExportDialog()
+{
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Export", "Export dialog placeholder.");
+}
+
+void EngineController::insertAudioFile()
+{
+    if (!edit) return;
+
+    static std::unique_ptr<juce::FileChooser> chooser;
+    chooser = std::make_unique<juce::FileChooser>("Select an Audio File", 
+                                                  juce::File::getSpecialLocation(juce::File::userMusicDirectory), 
+                                                  "*.wav;*.flac;*.mp3;*.ogg");
+    
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, 
+                         [this](const juce::FileChooser& fc)
+    {
+        auto file = fc.getResult();
+        if (file.existsAsFile())
+        {
+            auto tracks = tracktion::engine::getAudioTracks(*edit);
+            if (!tracks.isEmpty())
+            {
+                auto track = tracks[0];
+                tracktion::engine::AudioFile audioFile(engine, file);
+                auto length = audioFile.getLength();
+                auto pos = edit->getTransport().getPosition();
+                auto len = tracktion::TimeDuration::fromSeconds(length);
+                
+                tracktion::engine::ClipPosition clipPos { { pos, pos + len }, tracktion::TimeDuration::fromSeconds(0) };
+                
+                track->insertWaveClip(file.getFileNameWithoutExtension(), 
+                                      file, 
+                                      clipPos, 
+                                      false);
+            }
+        }
+    });
 }
 
 void EngineController::updateState()
@@ -99,5 +201,12 @@ void EngineController::updateState()
     {
         lastBpm = currentBpm;
         Q_EMIT bpmChanged();
+    }
+
+    double currentPos = positionSeconds();
+    if (std::abs(currentPos - lastPositionSeconds) > 0.01)
+    {
+        lastPositionSeconds = currentPos;
+        Q_EMIT positionSecondsChanged();
     }
 }

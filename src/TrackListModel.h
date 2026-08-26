@@ -32,9 +32,11 @@ public:
     Q_INVOKABLE void removeTrack(int index);
     Q_INVOKABLE void addMidiClip(int trackIndex, double startTime, double length);
 
+private Q_SLOTS:
+    void refreshTracks();
+
 private:
     void valueTreeChanged() override;
-    void refreshTracks();
 
     tracktion::engine::Edit* edit;
     std::vector<tracktion::engine::AudioTrack*> tracks;

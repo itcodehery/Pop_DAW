@@ -15,6 +15,8 @@
 
 #include <QQmlContext>
 #include <QQmlEngine>
+#include <QFontDatabase>
+#include <QFont>
 #include "EngineController.h"
 #include "TrackListModel.h"
 #include "ClipListModel.h"
@@ -28,6 +30,12 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
 
+    int id = QFontDatabase::addApplicationFont(":/fonts/DMSans.ttf");
+    if (id != -1) {
+        QString family = QFontDatabase::applicationFontFamilies(id).at(0);
+        QGuiApplication::setFont(QFont(family));
+    }
+    
     // Tracktion engine instance
     auto engine = std::make_unique<tracktion::engine::Engine>("Pop DAW");
     engine->getDeviceManager().initialise(0, 2);
