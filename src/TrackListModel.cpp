@@ -141,6 +141,20 @@ void TrackListModel::removeTrack(int index)
     edit->deleteTrack(track);
 }
 
+void TrackListModel::moveClip(int trackIndex, int clipIndex, double newStartSeconds)
+{
+    if (!edit || trackIndex < 0 || trackIndex >= static_cast<int>(tracks.size())) return;
+    if (auto* track = dynamic_cast<tracktion::engine::ClipTrack*>(tracks[static_cast<size_t>(trackIndex)])) {
+        auto clips = track->getClips();
+        if (clipIndex >= 0 && clipIndex < clips.size()) {
+            auto* clip = clips[clipIndex];
+            auto currentPos = clip->getPosition();
+            auto newStart = tracktion::TimePosition::fromSeconds(newStartSeconds);
+            clip->setPosition({ { newStart, newStart + currentPos.time.getLength() }, currentPos.offset });
+        }
+    }
+}
+
 void TrackListModel::addMidiClip(int trackIndex, double startTime, double length)
 {
     if (!edit || trackIndex < 0 || trackIndex >= static_cast<int>(tracks.size())) return;

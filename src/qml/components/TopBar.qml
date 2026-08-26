@@ -51,14 +51,15 @@ Rectangle {
                     }
                     Text { 
                         text: "VIEW"; color: "#FFFFFF"; font.pixelSize: 11; font.bold: true; anchors.verticalCenter: parent.verticalCenter 
+                        MouseArea { anchors.fill: parent; onClicked: rightPanelMode = 0 }
                     }
                     Text { 
                         text: "PLUGINS"; color: "#FFFFFF"; font.pixelSize: 11; font.bold: true; anchors.verticalCenter: parent.verticalCenter 
-                        MouseArea { anchors.fill: parent; onClicked: engineController.showPluginSettings() }
+                        MouseArea { anchors.fill: parent; onClicked: rightPanelMode = 2 }
                     }
                     Text { 
                         text: "AUDIO"; color: "#FFFFFF"; font.pixelSize: 11; font.bold: true; anchors.verticalCenter: parent.verticalCenter 
-                        MouseArea { anchors.fill: parent; onClicked: engineController.showAudioSettings() }
+                        MouseArea { anchors.fill: parent; onClicked: rightPanelMode = 1 }
                     }
                     Text { 
                         text: "HELP"; color: "#FFFFFF"; font.pixelSize: 11; font.bold: true; anchors.verticalCenter: parent.verticalCenter 
@@ -87,6 +88,39 @@ Rectangle {
                             font.pixelSize: 11
                             font.bold: true
                             anchors.centerIn: parent
+                        }
+                    }
+                    
+                    // Time Signature Box
+                    Rectangle {
+                        width: 45
+                        height: 26
+                        color: "#2C2D2F"
+                        radius: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        
+                        Text {
+                            text: engineController.timeSigNumerator + "/" + engineController.timeSigDenominator
+                            color: "#D27C44" // Orange/brown text
+                            font.pixelSize: 11
+                            font.bold: true
+                            anchors.centerIn: parent
+                        }
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                // Cycle common time signatures
+                                if (engineController.timeSigNumerator === 4 && engineController.timeSigDenominator === 4) {
+                                    engineController.timeSigNumerator = 3;
+                                } else if (engineController.timeSigNumerator === 3 && engineController.timeSigDenominator === 4) {
+                                    engineController.timeSigNumerator = 6;
+                                    engineController.timeSigDenominator = 8;
+                                } else {
+                                    engineController.timeSigNumerator = 4;
+                                    engineController.timeSigDenominator = 4;
+                                }
+                            }
                         }
                     }
                     
@@ -138,66 +172,63 @@ Rectangle {
 
         Item { Layout.fillWidth: true } // Spacer
 
-        // Mute Pill
+        // Master Level Pill
         Rectangle {
-            Layout.preferredWidth: 80
-            Layout.preferredHeight: 34
-            Layout.alignment: Qt.AlignVCenter
-            color: "#1E1E20"
-            radius: 17
-            
-            Row {
-                anchors.centerIn: parent
-                spacing: 15
-                Text {
-                    text: "MUTE"
-                    color: "#FFFFFF"
-                    font.pixelSize: 11
-                    font.bold: true
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-                Rectangle {
-                    width: 2
-                    height: 12
-                    color: "#555555"
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-            }
-        }
-        
-        // Master Meter Pill
-        Rectangle {
-            Layout.preferredWidth: 260
+            Layout.preferredWidth: 390
             Layout.preferredHeight: 40
             Layout.alignment: Qt.AlignVCenter
             color: "#1E1E20"
             radius: 4
             
-            Column {
+            RowLayout {
                 anchors.fill: parent
                 anchors.margins: 8
-                spacing: 4
+                spacing: 10
                 
-                RowLayout {
-                    width: parent.width
-                    
-                    Text { text: "MASTER"; color: "#888888"; font.pixelSize: 9; font.bold: true }
-                    Text { text: "0.0Hz"; color: "#FFFFFF"; font.pixelSize: 10; Layout.leftMargin: 5 }
-                    Item { Layout.fillWidth: true }
-                    Rectangle { width: 6; height: 6; radius: 3; color: "#E5C07B" } // Yellow dot
-                    Text { text: "∨"; color: "#888888"; font.pixelSize: 9; Layout.leftMargin: 5 }
+                Rectangle {
+                    width: 50
+                    height: 24
+                    color: engineController.metronomeEnabled ? "#3486F2" : "#2C2D2F"
+                    radius: 12
+                    Text { text: "CLICK"; color: engineController.metronomeEnabled ? "#FFFFFF" : "#888888"; font.pixelSize: 10; font.bold: true; anchors.centerIn: parent }
+                    MouseArea { anchors.fill: parent; onClicked: engineController.metronomeEnabled = !engineController.metronomeEnabled }
                 }
                 
-                // Meter blocks (horizontal dashes)
-                Row {
-                    spacing: 3
-                    Repeater {
-                        model: 35
-                        Rectangle {
-                            width: 4
-                            height: 3
-                            radius: 1
-                            color: index < 25 ? "#98E87B" : (index < 30 ? "#E5C07B" : "#E06C75")
+                Rectangle {
+                    width: 50
+                    height: 24
+                    color: engineController.masterMute ? "#E06C75" : "#2C2D2F"
+                    radius: 12
+                    Text { text: "MUTE"; color: engineController.masterMute ? "#FFFFFF" : "#888888"; font.pixelSize: 10; font.bold: true; anchors.centerIn: parent }
+                    MouseArea { anchors.fill: parent; onClicked: engineController.masterMute = !engineController.masterMute }
+                }
+                
+                // Master Level Meter
+                Column {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: 5
+                    spacing: 2
+                    
+                    RowLayout {
+                        Text { text: "MASTER"; color: "#888888"; font.pixelSize: 9; font.bold: true }
+                        Text { text: "0.0dB"; color: "#FFFFFF"; font.pixelSize: 10; Layout.leftMargin: 5 }
+                        Item { Layout.fillWidth: true }
+                        Rectangle { width: 6; height: 6; radius: 3; color: "#E5C07B" } // Yellow dot
+                        Text { text: "∨"; color: "#888888"; font.pixelSize: 9; Layout.leftMargin: 5 }
+                    }
+                    
+                    // Meter blocks (horizontal dashes)
+                    Row {
+                        spacing: 3
+                        Repeater {
+                            model: 35
+                            Rectangle {
+                                width: 4
+                                height: 3
+                                radius: 1
+                                color: index < 25 ? "#98E87B" : (index < 30 ? "#E5C07B" : "#E06C75")
+                                opacity: (index < (engineController.masterLevel * 35)) ? 1.0 : 0.2
+                            }
                         }
                     }
                 }

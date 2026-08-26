@@ -23,11 +23,15 @@ Rectangle {
             
             delegate: Rectangle {
                 width: parent.width
-                height: 60 // scaled down
-                color: "#2C2D2F"
-                radius: 4
-                border.color: "#1E1F21"
+                height: 80
+                color: index === engineController.selectedTrackIndex ? "#3E3F41" : "#252628"
+                border.color: index === engineController.selectedTrackIndex ? "#3486F2" : "#1E1F21"
                 border.width: 1
+                
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: engineController.selectedTrackIndex = index
+                }
                 
                 RowLayout {
                     anchors.fill: parent
@@ -66,6 +70,12 @@ Rectangle {
                                 color: isSoloed ? "#E5C07B" : "#444"
                                 Text { text: "S"; color: isSoloed ? "#111" : "#888"; font.pixelSize: 9; anchors.centerIn: parent }
                                 MouseArea { anchors.fill: parent; onClicked: isSoloed = !isSoloed }
+                            }
+                            Rectangle {
+                                width: 18; height: 18; radius: 3
+                                color: "#444"
+                                Text { text: "✕"; color: "#888"; font.pixelSize: 9; anchors.centerIn: parent }
+                                MouseArea { anchors.fill: parent; onClicked: trackListModel.removeTrack(index) }
                             }
                         }
                     }

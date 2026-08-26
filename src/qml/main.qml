@@ -9,6 +9,8 @@ ApplicationWindow {
     visible: true
     title: qsTr("Pop DAW")
     color: "#323336" // Main background color
+    
+    property int rightPanelMode: 0 // 0=Main, 1=Audio, 2=Plugins
 
     ColumnLayout {
         anchors.fill: parent

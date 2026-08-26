@@ -19,11 +19,13 @@ Rectangle {
         spacing: 2
         orientation: ListView.Horizontal
         clip: true
+        interactive: false
         
         model: trackListModel
         
         delegate: Rectangle {
-            width: 180 // scaled down from 220
+            visible: index === engineController.selectedTrackIndex
+            width: visible ? 240 : 0
             height: parent.height
             color: "#252628"
             border.color: "#1E1F21"
@@ -34,7 +36,7 @@ Rectangle {
             Rectangle {
                 anchors.fill: parent
                 color: trackColor || "#555"
-                opacity: 0.1
+                opacity: visible ? 0.1 : 0
                 radius: 4
             }
             

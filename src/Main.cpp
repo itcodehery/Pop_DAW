@@ -20,10 +20,12 @@
 #include "EngineController.h"
 #include "TrackListModel.h"
 #include "ClipListModel.h"
+#include "WaveformItem.h"
 
 int main(int argc, char *argv[])
 {
     qmlRegisterUncreatableType<ClipListModel>("PopDAW", 1, 0, "ClipListModel", "Used for roles only");
+    qmlRegisterType<WaveformItem>("PopDAW", 1, 0, "WaveformItem");
 
     // Initialize JUCE completely so Tracktion works
     juce::ScopedJuceInitialiser_GUI juceInit;

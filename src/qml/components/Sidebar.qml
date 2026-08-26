@@ -13,202 +13,300 @@ Rectangle {
         anchors.left: parent.left
     }
     
-    ColumnLayout {
+    StackLayout {
         anchors.fill: parent
-        anchors.margins: 10 // reduced
-        spacing: 10
+        currentIndex: rightPanelMode
         
-        // Active Controller Panel
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 260 // reduced
-            color: "#252628"
-            radius: 6
-            border.color: "#1E1F21"
-            border.width: 1
+        // Mode 0: Main Side Panel
+        ColumnLayout {
+            anchors.margins: 10 // reduced
+            spacing: 10
             
-            Column {
-                anchors.fill: parent
-                anchors.margins: 15
-                spacing: 15
+            // Active Controller Panel
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 260 // reduced
+                color: "#252628"
+                radius: 6
+                border.color: "#1E1F21"
+                border.width: 1
                 
-                Text {
-                    text: "ACTIVE CONTROLLER"
-                    color: "#FFFFFF"
-                    font.pixelSize: 12
-                    font.bold: true
-                }
-                
-                RowLayout {
-                    width: parent.width
-                    
-                    Rectangle {
-                        width: 8
-                        height: 8
-                        radius: 4
-                        color: "#98E87B"
-                        Layout.alignment: Qt.AlignVCenter
-                    }
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 15
+                    spacing: 15
                     
                     Text {
-                        text: "GUITAR SELECTED"
-                        color: "#98E87B"
-                        font.pixelSize: 10
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.leftMargin: 8
-                    }
-                    
-                    Item { Layout.fillWidth: true }
-                    
-                    Text {
-                        text: "Open Plugin"
+                        text: "ACTIVE CONTROLLER"
                         color: "#FFFFFF"
-                        font.pixelSize: 10
-                        Layout.alignment: Qt.AlignVCenter
+                        font.pixelSize: 12
+                        font.bold: true
+                    }
+                    
+                    RowLayout {
+                        width: parent.width
+                        
+                        Rectangle {
+                            width: 8
+                            height: 8
+                            radius: 4
+                            color: "#98E87B"
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                        
+                        Text {
+                            text: "GUITAR SELECTED"
+                            color: "#98E87B"
+                            font.pixelSize: 10
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.leftMargin: 8
+                        }
+                        
+                        Item { Layout.fillWidth: true }
+                        
+                        Text {
+                            text: "Open Plugin"
+                            color: "#FFFFFF"
+                            font.pixelSize: 10
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                    }
+                    
+                    // Knobs Grid
+                    GridLayout {
+                        columns: 2
+                        rowSpacing: 20
+                        columnSpacing: 30
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        
+                        Repeater {
+                            model: ["ATTACK", "RELEASE", "DELAY", "SUSTAIN"]
+                            
+                            Column {
+                                spacing: 10
+                                
+                                // Mock Knob
+                                Item {
+                                    width: 50 // reduced
+                                    height: 50
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    
+                                    // Knob Track
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: 25
+                                        color: "transparent"
+                                        border.color: "#111"
+                                        border.width: 3
+                                    }
+                                    
+                                    // Knob Value (Blue arc)
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: 25
+                                        color: "transparent"
+                                        border.color: "#3486F2"
+                                        border.width: 3
+                                        clip: true
+                                    }
+                                }
+                                
+                                Text {
+                                    text: modelData
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 10
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+                        }
                     }
                 }
+            }
+            
+            // Active Effects Panel
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: "#252628"
+                radius: 6
+                border.color: "#1E1F21"
+                border.width: 1
                 
-                // Knobs Grid
-                GridLayout {
-                    columns: 2
-                    rowSpacing: 20
-                    columnSpacing: 30
-                    anchors.horizontalCenter: parent.horizontalCenter
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 15
+                    spacing: 12
                     
-                    Repeater {
-                        model: ["ATTACK", "RELEASE", "DELAY", "SUSTAIN"]
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text {
+                            text: "ACTIVE EFFECTS"
+                            color: "#FFFFFF"
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                        Item { Layout.fillWidth: true }
+                        Text {
+                            text: "ENABLED"
+                            color: "#D27C44" // Orange
+                            font.pixelSize: 10
+                            font.bold: true
+                        }
+                    }
+                    
+                    // Effects List
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        
+                        Repeater {
+                            model: engineController.selectedTrackPlugins
+                            delegate: Rectangle {
+                                width: parent.width
+                                height: 36
+                                color: "#252628"
+                                radius: 4
+                                border.color: "#1E1F21"
+                                border.width: 1
+                                
+                                Text {
+                                    text: modelData
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 11
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 10
+                                }
+                                
+                                Rectangle {
+                                    width: 20
+                                    height: 20
+                                    color: "#3A3B3D"
+                                    radius: 4
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 8
+                                    
+                                    Text {
+                                        text: ">"
+                                        color: "#FFF"
+                                        font.pixelSize: 10
+                                        anchors.centerIn: parent
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    Item { Layout.fillHeight: true } // Spacer
+                    
+                    // Add Effect Button
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 60
+                        color: "transparent"
+                        border.color: "#3A3B3D"
+                        border.width: 2
+                        radius: 4
                         
                         Column {
-                            spacing: 10
-                            
-                            // Mock Knob
-                            Item {
-                                width: 50 // reduced
-                                height: 50
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                
-                                // Knob Track
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 25
-                                    color: "transparent"
-                                    border.color: "#111"
-                                    border.width: 3
-                                }
-                                
-                                // Knob Value (Blue arc)
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 25
-                                    color: "transparent"
-                                    border.color: "#3486F2"
-                                    border.width: 3
-                                    clip: true
-                                }
-                            }
-                            
-                            Text {
-                                text: modelData
-                                color: "#FFFFFF"
-                                font.pixelSize: 10
-                                anchors.horizontalCenter: parent.horizontalCenter
-                            }
+                            anchors.centerIn: parent
+                            spacing: 6
+                            Text { text: "+"; color: "#555"; font.pixelSize: 18; anchors.horizontalCenter: parent.horizontalCenter }
+                            Text { text: "ADD AN EFFECT"; color: "#555"; font.pixelSize: 10; anchors.horizontalCenter: parent.horizontalCenter }
                         }
                     }
                 }
             }
         }
         
-        // Active Effects Panel
+        // Mode 1: Audio Settings
         Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: "#252628"
-            radius: 6
-            border.color: "#1E1F21"
-            border.width: 1
-            
+            color: "transparent"
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 15
-                spacing: 12
+                spacing: 15
                 
-                RowLayout {
+                Text { text: "AUDIO ENGINE"; color: "#FFFFFF"; font.pixelSize: 14; font.bold: true }
+                
+                Text { text: "Audio Device Type:"; color: "#AAAAAA"; font.pixelSize: 11 }
+                ComboBox {
                     Layout.fillWidth: true
-                    Text {
-                        text: "ACTIVE EFFECTS"
-                        color: "#FFFFFF"
-                        font.pixelSize: 12
-                        font.bold: true
-                    }
-                    Item { Layout.fillWidth: true }
-                    Text {
-                        text: "ENABLED"
-                        color: "#D27C44" // Orange
-                        font.pixelSize: 10
-                        font.bold: true
+                    model: engineController.audioDeviceTypes
+                    onCurrentTextChanged: {
+                        if (currentText !== "") engineController.setAudioDeviceType(currentText)
                     }
                 }
                 
-                // Effects List
-                Column {
+                Text { text: "Output Device:"; color: "#AAAAAA"; font.pixelSize: 11; Layout.topMargin: 10 }
+                ComboBox {
                     Layout.fillWidth: true
-                    spacing: 8
-                    
-                    Repeater {
-                        model: ["Filter Delay", "Limiter", "Resonator", "EQ Eight Band"]
-                        
-                        Rectangle {
-                            width: parent.width
-                            height: 32 // reduced
-                            color: "#2C2D2F"
-                            radius: 4
-                            
-                            Text {
-                                text: modelData
-                                color: "#FFFFFF"
-                                font.pixelSize: 11
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.left: parent.left
-                                anchors.leftMargin: 10
-                            }
-                            
-                            Rectangle {
-                                width: 20
-                                height: 20
-                                color: "#3A3B3D"
-                                radius: 4
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.right: parent.right
-                                anchors.rightMargin: 8
-                                
-                                Text {
-                                    text: ">"
-                                    color: "#FFF"
-                                    font.pixelSize: 10
-                                    anchors.centerIn: parent
-                                }
-                            }
+                    model: engineController.outputDevices
+                    onCurrentTextChanged: {
+                        if (currentText !== "") engineController.setOutputDevice(currentText)
+                    }
+                }
+                
+                Item { Layout.fillHeight: true }
+                
+                Button {
+                    text: "Scan Devices"
+                    Layout.fillWidth: true
+                    onClicked: {
+                        // Force refresh
+                        engineController.setAudioDeviceType(engineController.currentDeviceType)
+                    }
+                }
+            }
+        }
+        
+        // Mode 2: Plugin Browser
+        Rectangle {
+            color: "transparent"
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 15
+                spacing: 15
+                
+                Text { text: "PLUGIN BROWSER"; color: "#FFFFFF"; font.pixelSize: 14; font.bold: true }
+                
+                Button {
+                    text: "Scan for Plugins"
+                    Layout.fillWidth: true
+                    onClicked: engineController.showPluginSettings()
+                }
+                
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    model: engineController.availablePlugins
+                    spacing: 4
+                    delegate: Rectangle {
+                        width: parent.width
+                        height: 40
+                        color: "#2C2D2F"
+                        radius: 4
+                        Text {
+                            text: modelData
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
+                            anchors.leftMargin: 10
+                            width: parent.width - 50
+                            elide: Text.ElideRight
                         }
-                    }
-                }
-                
-                Item { Layout.fillHeight: true } // Spacer
-                
-                // Add Effect Button
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 60
-                    color: "transparent"
-                    border.color: "#3A3B3D"
-                    border.width: 2
-                    radius: 4
-                    
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: 6
-                        Text { text: "+"; color: "#555"; font.pixelSize: 18; anchors.horizontalCenter: parent.horizontalCenter }
-                        Text { text: "ADD AN EFFECT"; color: "#555"; font.pixelSize: 10; anchors.horizontalCenter: parent.horizontalCenter }
+                        Button {
+                            text: "+"
+                            width: 30
+                            height: 30
+                            anchors.right: parent.right
+                            anchors.rightMargin: 5
+                            anchors.verticalCenter: parent.verticalCenter
+                            onClicked: engineController.addPluginToTrack(engineController.selectedTrackIndex, modelData)
+                        }
                     }
                 }
             }

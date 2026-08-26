@@ -65,6 +65,7 @@ target_sources(PopDAW PRIVATE
     src/ClipListModel.h
     src/TrackListModel.cpp
     src/TrackListModel.h
+    src/WaveformItem.cpp
     src/MainComponent.cpp
     src/MainComponent.h
     src/PopLookAndFeel.cpp

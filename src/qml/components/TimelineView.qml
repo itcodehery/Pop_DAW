@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
+import PopDAW 1.0
 
 Rectangle {
     color: "#1E1F21"
@@ -28,14 +30,20 @@ Rectangle {
         
         MouseArea {
             anchors.fill: parent
+            onPositionChanged: (mouse) => {
+                if (pressed) {
+                    engineController.setPositionSeconds(Math.max(0, mouse.x / 100.0))
+                }
+            }
             onClicked: (mouse) => {
-                engineController.setPositionSeconds(mouse.x / 100.0)
+                engineController.setPositionSeconds(Math.max(0, mouse.x / 100.0))
             }
         }
     }
     
     // Playhead
     Rectangle {
+        id: playhead
         width: 2
         height: parent.height
         color: "#E06C75" // Red playhead
@@ -57,6 +65,21 @@ Rectangle {
                 ctx.lineTo(4, 8);
                 ctx.closePath();
                 ctx.fill();
+            }
+        }
+        
+        MouseArea {
+            width: 20
+            height: parent.height
+            anchors.horizontalCenter: parent.horizontalCenter
+            cursorShape: Qt.SizeHorCursor
+            
+            // We use onPositionChanged instead of Drag to keep the property binding active
+            onPositionChanged: (mouse) => {
+                if (pressed) {
+                    var newX = mapToItem(timeRuler, mouse.x, 0).x
+                    engineController.setPositionSeconds(Math.max(0, newX / 100.0))
+                }
             }
         }
     }
@@ -93,23 +116,40 @@ Rectangle {
         
         model: trackListModel
         clip: true
+        interactive: false // Managed by TrackHeaders scroll
         
-        delegate: Item {
+        delegate: Rectangle {
+            id: trackDelegate
+            readonly property int trackIndex: index
             width: parent.width
             height: 60 // matches TrackHeaders.qml delegate height
+            color: index % 2 === 0 ? "#1A1A1C" : "#1E1F21" // Alternate faint tracking lines
             
             // Grid lines for this track
             Rectangle {
                 width: parent.width
                 height: 1
-                color: "#222"
+                color: "#2C2D2F"
                 anchors.bottom: parent.bottom
+            }
+            
+            DropArea {
+                anchors.fill: parent
+                keys: ["text/uri-list"]
+                onDropped: (drop) => {
+                    if (drop.hasUrls) {
+                        for (let i = 0; i < drop.urls.length; i++) {
+                            engineController.insertAudioFileToTrack(trackDelegate.trackIndex, drop.urls[i].toString(), drop.x / 100.0)
+                        }
+                    }
+                }
             }
             
             // Loop over clips in this track
             Repeater {
                 model: clipModel
                 Rectangle {
+                    id: clipRect
                     x: clipStartTime * 100.0
                     y: 10
                     width: Math.max(clipLength * 100.0, 1)
@@ -117,6 +157,15 @@ Rectangle {
                     color: clipColor || "#888"
                     radius: 4
                     opacity: 0.8
+                    
+                    MouseArea {
+                        anchors.fill: parent
+                        drag.target: clipRect
+                        drag.axis: Drag.XAxis
+                        onReleased: {
+                            trackListModel.moveClip(trackDelegate.trackIndex, index, clipRect.x / 100.0)
+                        }
+                    }
                     
                     Text { 
                         text: clipName || "Audio Clip"
@@ -129,20 +178,12 @@ Rectangle {
                         width: parent.width - 8
                     }
                     
-                    // Mock waveform inside real clip
-                    Row {
-                        anchors.centerIn: parent
-                        spacing: 1
-                        clip: true
-                        Repeater {
-                            model: Math.max(1, Math.min(parent.parent.width / 3, 200))
-                            Rectangle {
-                                width: 2
-                                height: Math.random() * 25 + 5
-                                color: "#111"
-                                opacity: 0.5
-                            }
-                        }
+                    WaveformItem {
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        engineController: engineController
+                        trackIndex: trackDelegate.trackIndex
+                        clipIndex: index
                     }
                 }
             }
