@@ -41,6 +41,12 @@ int main(int argc, char *argv[])
     // Tracktion engine instance
     auto engine = std::make_unique<tracktion::engine::Engine>("Pop DAW");
     engine->getDeviceManager().initialise(0, 2);
+    
+    // Force dummy device if no real audio device could be opened (common on Linux)
+    if (engine->getDeviceManager().deviceManager.getCurrentAudioDevice() == nullptr) {
+        engine->getDeviceManager().deviceManager.setCurrentAudioDeviceType("Dummy", true);
+    }
+    
     engine->getPluginManager().initialise();
 
     juce::File editFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("PopDAW_Session.tracktionedit");

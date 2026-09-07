@@ -89,15 +89,15 @@ Rectangle {
                         color: isMuted ? "#E06C75" : "#444"
                         radius: 3
                         Text { text: "M"; color: isMuted ? "#FFF" : "#888"; font.pixelSize: 9; anchors.centerIn: parent }
-                        MouseArea { anchors.fill: parent; onClicked: isMuted = !isMuted }
+                        MouseArea { anchors.fill: parent; onClicked: trackListModel.toggleTrackMute(index) }
                     }
                     Rectangle {
                         width: 22
                         height: 18
-                        color: isSoloed ? "#E5C07B" : "#444"
                         radius: 3
+                        color: isSoloed ? "#E5C07B" : "#444"
                         Text { text: "S"; color: isSoloed ? "#111" : "#888"; font.pixelSize: 9; anchors.centerIn: parent }
-                        MouseArea { anchors.fill: parent; onClicked: isSoloed = !isSoloed }
+                        MouseArea { anchors.fill: parent; onClicked: trackListModel.toggleTrackSolo(index) }
                     }
                 }
                 
@@ -156,12 +156,28 @@ Rectangle {
                     
                     // Fader handle
                     Rectangle {
+                        id: faderHandle
                         width: 12
                         height: 12
                         color: trackColor || "#555"
                         radius: 2
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: 100 - ((volumeDb + 60) / 72) * 100 // Map -60 to +12 dB roughly to 0-100 height
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            drag.target: faderHandle
+                            drag.axis: Drag.YAxis
+                            drag.minimumY: 0
+                            drag.maximumY: 100
+                            onPositionChanged: {
+                                if (drag.active) {
+                                    // Reverse map Y (0-100) back to dB (-60 to +12)
+                                    let val = ((100 - faderHandle.y) / 100) * 72 - 60
+                                    trackListModel.setTrackVolume(index, val)
+                                }
+                            }
+                        }
                     }
                 }
                 

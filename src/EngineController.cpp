@@ -283,6 +283,51 @@ QStringList EngineController::selectedTrackPlugins() const
     return list;
 }
 
+// Minimal juce::DocumentWindow to host a plugin GUI
+class PluginWindow : public juce::DocumentWindow {
+public:
+    PluginWindow(const juce::String& name, tracktion::engine::Plugin::Ptr p)
+        : DocumentWindow(name, juce::Colours::darkgrey, DocumentWindow::allButtons), plugin(p)
+    {
+        setUsingNativeTitleBar(true);
+        if (auto editor = plugin->createEditor()) {
+            const bool canResize = editor->allowWindowResizing();
+            setContentOwned(editor.release(), true);
+            setResizable(canResize, false);
+        } else {
+            auto* label = new juce::Label(juce::String(), "This plugin has no GUI.");
+            label->setSize(300, 200);
+            label->setJustificationType(juce::Justification::centred);
+            setContentOwned(label, true);
+        }
+        centreWithSize(getWidth(), getHeight());
+        setVisible(true);
+    }
+    
+    void closeButtonPressed() override {
+        delete this;
+    }
+private:
+    tracktion::engine::Plugin::Ptr plugin;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginWindow)
+};
+
+void EngineController::showPluginEditor(int trackIndex, int pluginIndex)
+{
+    if (!edit) return;
+    auto tracks = tracktion::engine::getAudioTracks(*edit);
+    if (trackIndex < 0 || trackIndex >= tracks.size()) return;
+    
+    auto* track = tracks[trackIndex];
+    if (pluginIndex < 0 || pluginIndex >= track->pluginList.size()) return;
+    
+    auto plugin = track->pluginList[pluginIndex];
+    if (plugin) {
+        // Window deletes itself on close
+        new PluginWindow(plugin->getName(), plugin);
+    }
+}
+
 void EngineController::setAudioDeviceType(const QString& typeName)
 {
     engine.getDeviceManager().deviceManager.setCurrentAudioDeviceType(typeName.toStdString(), true);
@@ -390,7 +435,7 @@ void EngineController::updateState()
     }
 
     double newPos = edit->getTransport().getPosition().inSeconds();
-    if (newPos != m_positionSeconds) {
+    if (std::abs(newPos - m_positionSeconds) > 0.0001) {
         m_positionSeconds = newPos;
         Q_EMIT positionSecondsChanged();
     }

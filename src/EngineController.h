@@ -77,6 +77,7 @@ public:
     }
     
     QStringList selectedTrackPlugins() const;
+    Q_INVOKABLE void showPluginEditor(int trackIndex, int pluginIndex);
 
 public Q_SLOTS:
     void togglePlay();

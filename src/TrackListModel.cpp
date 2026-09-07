@@ -141,16 +141,74 @@ void TrackListModel::removeTrack(int index)
     edit->deleteTrack(track);
 }
 
+void TrackListModel::toggleTrackMute(int index)
+{
+    if (!edit || index < 0 || index >= static_cast<int>(tracks.size())) return;
+    auto* track = tracks[static_cast<size_t>(index)];
+    track->setMute(!track->isMuted(false));
+    Q_EMIT dataChanged(this->index(index, 0), this->index(index, 0), {MuteRole});
+}
+
+void TrackListModel::toggleTrackSolo(int index)
+{
+    if (!edit || index < 0 || index >= static_cast<int>(tracks.size())) return;
+    auto* track = tracks[static_cast<size_t>(index)];
+    track->setSolo(!track->isSolo(false));
+    Q_EMIT dataChanged(this->index(index, 0), this->index(index, 0), {SoloRole});
+}
+
+void TrackListModel::setTrackVolume(int index, float db)
+{
+    if (!edit || index < 0 || index >= static_cast<int>(tracks.size())) return;
+    auto* track = tracks[static_cast<size_t>(index)];
+    
+    // In tracktion, volume plugin is automatically added to tracks, or we set the volume on the track's volume plugin.
+    auto volPlugin = track->getVolumePlugin();
+    if (volPlugin) {
+        volPlugin->setVolumeDb(db);
+        Q_EMIT dataChanged(this->index(index, 0), this->index(index, 0), {VolumeRole});
+    }
+}
+
 void TrackListModel::moveClip(int trackIndex, int clipIndex, double newStartSeconds)
 {
     if (!edit || trackIndex < 0 || trackIndex >= static_cast<int>(tracks.size())) return;
-    if (auto* track = dynamic_cast<tracktion::engine::ClipTrack*>(tracks[static_cast<size_t>(trackIndex)])) {
-        auto clips = track->getClips();
+    auto* track = tracks[static_cast<size_t>(trackIndex)];
+    if (auto* clipTrack = dynamic_cast<tracktion::engine::ClipTrack*>(track)) {
+        auto clips = clipTrack->getClips();
         if (clipIndex >= 0 && clipIndex < clips.size()) {
             auto* clip = clips[clipIndex];
-            auto currentPos = clip->getPosition();
-            auto newStart = tracktion::TimePosition::fromSeconds(newStartSeconds);
-            clip->setPosition({ { newStart, newStart + currentPos.time.getLength() }, currentPos.offset });
+            auto pos = clip->getPosition();
+            pos.time = { tracktion::TimePosition::fromSeconds(newStartSeconds), pos.time.getLength() };
+            clip->setPosition(pos);
+        }
+    }
+}
+
+void TrackListModel::splitClip(int trackIndex, int clipIndex, double splitTimeSeconds)
+{
+    if (!edit || trackIndex < 0 || trackIndex >= static_cast<int>(tracks.size())) return;
+    auto* track = tracks[static_cast<size_t>(trackIndex)];
+    if (auto* clipTrack = dynamic_cast<tracktion::engine::ClipTrack*>(track)) {
+        auto clips = clipTrack->getClips();
+        if (clipIndex >= 0 && clipIndex < clips.size()) {
+            auto* clip = clips[clipIndex];
+            tracktion::engine::SelectableList list;
+            list.add(clip);
+            tracktion::engine::splitClips(list, tracktion::TimePosition::fromSeconds(splitTimeSeconds));
+        }
+    }
+}
+
+void TrackListModel::deleteClip(int trackIndex, int clipIndex)
+{
+    if (!edit || trackIndex < 0 || trackIndex >= static_cast<int>(tracks.size())) return;
+    auto* track = tracks[static_cast<size_t>(trackIndex)];
+    if (auto* clipTrack = dynamic_cast<tracktion::engine::ClipTrack*>(track)) {
+        auto clips = clipTrack->getClips();
+        if (clipIndex >= 0 && clipIndex < clips.size()) {
+            auto* clip = clips[clipIndex];
+            clip->removeFromParent();
         }
     }
 }

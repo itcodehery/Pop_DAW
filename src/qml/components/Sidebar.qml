@@ -178,6 +178,16 @@ Rectangle {
                                     anchors.leftMargin: 10
                                 }
                                 
+                                Button {
+                                    text: "Open"
+                                    width: 40
+                                    height: 24
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 35
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    onClicked: engineController.showPluginEditor(engineController.selectedTrackIndex, index)
+                                }
+                                
                                 Rectangle {
                                     width: 20
                                     height: 20

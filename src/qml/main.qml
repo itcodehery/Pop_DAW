@@ -11,6 +11,12 @@ ApplicationWindow {
     color: "#323336" // Main background color
     
     property int rightPanelMode: 0 // 0=Main, 1=Audio, 2=Plugins
+    property int bottomPanelMode: 0 // 0=Mixer, 1=PianoRoll
+    
+    Shortcut {
+        sequence: "Shift+Tab"
+        onActivated: bottomPanelMode = (bottomPanelMode === 0) ? 1 : 0
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -71,10 +77,10 @@ ApplicationWindow {
                 }
                 
                 Loader {
-                    id: mixerPanelLoader
+                    id: bottomPanelLoader
                     Layout.fillWidth: true
                     Layout.preferredHeight: 200 // reduced
-                    source: "qrc:/qml/components/MixerPanel.qml"
+                    source: bottomPanelMode === 0 ? "qrc:/qml/components/MixerPanel.qml" : "qrc:/qml/components/PianoRoll.qml"
                 }
             }
             

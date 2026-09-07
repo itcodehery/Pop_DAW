@@ -157,11 +157,24 @@ Rectangle {
                     color: clipColor || "#888"
                     radius: 4
                     opacity: 0.8
+                    border.color: activeFocus ? "#FFFFFF" : "transparent"
+                    border.width: activeFocus ? 2 : 0
+                    
+                    Keys.onPressed: (event) => {
+                        if (event.key === Qt.Key_Delete || event.key === Qt.Key_Backspace) {
+                            trackListModel.deleteClip(trackDelegate.trackIndex, index)
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_S) {
+                            trackListModel.splitClip(trackDelegate.trackIndex, index, engineController.positionSeconds)
+                            event.accepted = true
+                        }
+                    }
                     
                     MouseArea {
                         anchors.fill: parent
                         drag.target: clipRect
                         drag.axis: Drag.XAxis
+                        onClicked: clipRect.forceActiveFocus()
                         onReleased: {
                             trackListModel.moveClip(trackDelegate.trackIndex, index, clipRect.x / 100.0)
                         }

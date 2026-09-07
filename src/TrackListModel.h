@@ -31,6 +31,11 @@ public:
     Q_INVOKABLE void addTrack();
     Q_INVOKABLE void removeTrack(int index);
     Q_INVOKABLE void moveClip(int trackIndex, int clipIndex, double newStartSeconds);
+    Q_INVOKABLE void splitClip(int trackIndex, int clipIndex, double splitTimeSeconds);
+    Q_INVOKABLE void deleteClip(int trackIndex, int clipIndex);
+    Q_INVOKABLE void toggleTrackMute(int index);
+    Q_INVOKABLE void toggleTrackSolo(int index);
+    Q_INVOKABLE void setTrackVolume(int index, float db);
     Q_INVOKABLE void addMidiClip(int trackIndex, double startTime, double length);
 
 private Q_SLOTS:

@@ -26,6 +26,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     endif()
 endif()
 
+# Enable CCache if available to speed up rebuilds
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    message(STATUS "Found ccache: ${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+endif()
 # Add JUCE (bundled with tracktion_engine)
 add_subdirectory(libs/tracktion_engine/modules/juce)
 
@@ -106,6 +113,7 @@ juce_add_binary_data(PopDAW_Assets
         assets/fonts/BBHBartle-Regular.ttf
         assets/fonts/DMSans.ttf
 )
+
 
 # Link against JUCE modules and Tracktion Engine
 target_link_libraries(PopDAW PRIVATE

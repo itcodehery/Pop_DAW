@@ -63,13 +63,13 @@ Rectangle {
                                 width: 18; height: 18; radius: 3
                                 color: isMuted ? "#E06C75" : "#444"
                                 Text { text: "M"; color: isMuted ? "#FFF" : "#888"; font.pixelSize: 9; anchors.centerIn: parent }
-                                MouseArea { anchors.fill: parent; onClicked: isMuted = !isMuted }
+                                MouseArea { anchors.fill: parent; onClicked: trackListModel.toggleTrackMute(index) }
                             }
                             Rectangle {
                                 width: 18; height: 18; radius: 3
                                 color: isSoloed ? "#E5C07B" : "#444"
                                 Text { text: "S"; color: isSoloed ? "#111" : "#888"; font.pixelSize: 9; anchors.centerIn: parent }
-                                MouseArea { anchors.fill: parent; onClicked: isSoloed = !isSoloed }
+                                MouseArea { anchors.fill: parent; onClicked: trackListModel.toggleTrackSolo(index) }
                             }
                             Rectangle {
                                 width: 18; height: 18; radius: 3

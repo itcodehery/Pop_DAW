@@ -1,7 +1,12 @@
 #include "WaveformItem.h"
 #include "EngineController.h"
+#include <QDebug>
 
-WaveformItem::WaveformItem(QQuickItem* parent) : QQuickPaintedItem(parent) {}
+WaveformItem::WaveformItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
+    setRenderTarget(QQuickPaintedItem::FramebufferObject);
+    connect(this, &QQuickItem::widthChanged, this, [this]() { update(); });
+    connect(this, &QQuickItem::heightChanged, this, [this]() { update(); });
+}
 
 void WaveformItem::paint(QPainter* painter) {
     if (!m_controller || m_trackIndex < 0 || m_clipIndex < 0) return;
@@ -52,10 +57,14 @@ void WaveformItem::paint(QPainter* painter) {
     if (samplesPerPixel < 1) samplesPerPixel = 1;
     
     // Read the whole block at once to avoid blocking UI thread with thousands of small disk reads
-    // Cap memory usage to avoid massive allocations (e.g., if zoomed out a lot)
     juce::int64 maxSamplesToRead = juce::jmin(numSamples, (juce::int64)4410000); // Max 100 seconds at a time
     juce::AudioBuffer<float> buffer(1, (int)maxSamplesToRead);
-    reader->read(&buffer, 0, (int)maxSamplesToRead, startSample, true, false);
+    buffer.clear();
+    bool success = reader->read(&buffer, 0, (int)maxSamplesToRead, startSample, true, false);
+    
+    qInfo() << "WaveformItem paint: track=" << m_trackIndex << " clip=" << m_clipIndex
+            << " w=" << w << " h=" << h << " numSamples=" << numSamples
+            << " maxSamples=" << maxSamplesToRead << " readSuccess=" << success;
     
     auto* data = buffer.getReadPointer(0);
     
