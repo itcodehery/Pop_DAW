@@ -73,20 +73,7 @@ target_sources(PopDAW PRIVATE
     src/TrackListModel.cpp
     src/TrackListModel.h
     src/WaveformItem.cpp
-    src/MainComponent.cpp
-    src/MainComponent.h
-    src/PopLookAndFeel.cpp
-    src/PopLookAndFeel.h
-    src/MixerChannelComponent.cpp
-    src/MixerChannelComponent.h
-    src/ClipGridComponent.cpp
-    src/ClipGridComponent.h
-    src/SidebarComponent.cpp
-    src/SidebarComponent.h
-    src/TopBarComponent.cpp
-    src/TopBarComponent.h
-    src/SettingsComponent.cpp
-    src/SettingsComponent.h
+    src/WaveformItem.h
 )
 
 # Compile definitions

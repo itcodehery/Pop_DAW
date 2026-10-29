@@ -12,6 +12,13 @@ public:
         NameRole = Qt::UserRole + 1,
         StartTimeRole,
         LengthRole,
+        OffsetRole,
+        GainDbRole,
+        FadeInRole,
+        FadeOutRole,
+        IsReversedRole,
+        PitchSemitonesRole,
+        SpeedRatioRole,
         ColorRole,
         IsMidiRole
     };
@@ -23,9 +30,11 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
+private Q_SLOTS:
+    void refreshClips();
+
 private:
     void valueTreeChanged() override;
-    void refreshClips();
 
     tracktion::engine::Track* track;
     std::vector<tracktion::engine::Clip*> clips;

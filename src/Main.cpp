@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     
     // Tracktion engine instance
     auto engine = std::make_unique<tracktion::engine::Engine>("Pop DAW");
-    engine->getDeviceManager().initialise(0, 2);
+    engine->getDeviceManager().initialise(2, 2);
     
     // Force dummy device if no real audio device could be opened (common on Linux)
     if (engine->getDeviceManager().deviceManager.getCurrentAudioDevice() == nullptr) {
@@ -50,11 +50,16 @@ int main(int argc, char *argv[])
     engine->getPluginManager().initialise();
 
     juce::File editFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("PopDAW_Session.tracktionedit");
-    auto currentEdit = tracktion::engine::createEmptyEdit(*engine, editFile);
+    std::unique_ptr<tracktion::engine::Edit> currentEdit;
+    if (editFile.existsAsFile())
+        currentEdit = tracktion::engine::loadEditFromFile(*engine, editFile);
+    else
+        currentEdit = tracktion::engine::createEmptyEdit(*engine, editFile);
+    currentEdit->playInStopEnabled = true;
     currentEdit->getTransport().ensureContextAllocated();
 
-    EngineController engineController(*engine, currentEdit.get());
-    TrackListModel trackListModel(currentEdit.get());
+    EngineController engineController(*engine, std::move(currentEdit));
+    TrackListModel trackListModel(&engineController);
 
     // Pump JUCE messages using Qt's event loop
     QTimer juceEventPump;

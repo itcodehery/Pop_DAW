@@ -28,6 +28,7 @@ QVariant ClipListModel::data(const QModelIndex& index, int role) const
         return QVariant();
 
     auto* clip = clips[static_cast<size_t>(index.row())];
+    auto* audioClip = dynamic_cast<tracktion::engine::AudioClipBase*>(clip);
 
     switch (role) {
         case NameRole:
@@ -38,9 +39,35 @@ QVariant ClipListModel::data(const QModelIndex& index, int role) const
             
         case LengthRole:
             return clip->getPosition().time.getLength().inSeconds();
+
+        case OffsetRole:
+            return clip->getPosition().offset.inSeconds();
+
+        case GainDbRole:
+            return audioClip ? audioClip->getGainDB() : 0.0f;
+
+        case FadeInRole:
+            return audioClip ? audioClip->getFadeIn().inSeconds() : 0.0;
+
+        case FadeOutRole:
+            return audioClip ? audioClip->getFadeOut().inSeconds() : 0.0;
+
+        case IsReversedRole:
+            return audioClip ? audioClip->getIsReversed() : false;
+
+        case PitchSemitonesRole:
+            return audioClip ? audioClip->getPitchChange() : 0.0f;
+
+        case SpeedRatioRole:
+            return clip->getSpeedRatio();
             
         case ColorRole: {
             auto c = clip->getColour();
+            if (c.isTransparent()) {
+                if (track) c = track->getColour();
+            }
+            if (c.isTransparent())
+                return QColor("#74A8E8");
             return QColor(c.getRed(), c.getGreen(), c.getBlue());
         }
             
@@ -57,6 +84,13 @@ QHash<int, QByteArray> ClipListModel::roleNames() const
     roles[NameRole] = "clipName";
     roles[StartTimeRole] = "clipStartTime";
     roles[LengthRole] = "clipLength";
+    roles[OffsetRole] = "clipOffset";
+    roles[GainDbRole] = "clipGainDb";
+    roles[FadeInRole] = "clipFadeIn";
+    roles[FadeOutRole] = "clipFadeOut";
+    roles[IsReversedRole] = "clipIsReversed";
+    roles[PitchSemitonesRole] = "clipPitch";
+    roles[SpeedRatioRole] = "clipSpeed";
     roles[ColorRole] = "clipColor";
     roles[IsMidiRole] = "isMidi";
     return roles;

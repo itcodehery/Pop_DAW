@@ -4,15 +4,72 @@ import QtQuick.Layouts
 import QtQuick.Window
 
 ApplicationWindow {
+    id: mainWindow
     width: 1440
     height: 900
     visible: true
-    title: qsTr("Pop DAW")
-    color: "#323336" // Main background color
+    title: qsTr("Pop DAW — ") + engineController.projectName
+    color: "#323336"
     
-    property int rightPanelMode: 0 // 0=Main, 1=Audio, 2=Plugins
+    property int sidebarMode: 0 // 0=Inspector/FX, 1=Audio Settings, 2=Plugins
     property int bottomPanelMode: 0 // 0=Mixer, 1=PianoRoll
-    
+    property string statusToast: ""
+
+    Connections {
+        target: engineController
+        function onStatusMessage(message) {
+            statusToast = message
+            toastTimer.restart()
+        }
+    }
+
+    Timer {
+        id: toastTimer
+        interval: 3000
+        onTriggered: statusToast = ""
+    }
+
+    // Global Keyboard Shortcuts for Audio Editing
+    Shortcut {
+        sequence: "Space"
+        onActivated: engineController.togglePlay()
+    }
+    Shortcut {
+        sequence: "Ctrl+Z"
+        onActivated: engineController.undo()
+    }
+    Shortcut {
+        sequences: ["Ctrl+Y", "Ctrl+Shift+Z"]
+        onActivated: engineController.redo()
+    }
+    Shortcut {
+        sequence: "Ctrl+S"
+        onActivated: engineController.saveProject()
+    }
+    Shortcut {
+        sequence: "Ctrl+Shift+S"
+        onActivated: engineController.saveProjectAs()
+    }
+    Shortcut {
+        sequence: "Ctrl+O"
+        onActivated: engineController.openProject()
+    }
+    Shortcut {
+        sequence: "Ctrl+N"
+        onActivated: engineController.showNewProjectDialog()
+    }
+    Shortcut {
+        sequence: "Ctrl+E"
+        onActivated: engineController.showExportDialog()
+    }
+    Shortcut {
+        sequence: "Ctrl+I"
+        onActivated: engineController.insertAudioFile()
+    }
+    Shortcut {
+        sequence: "L"
+        onActivated: engineController.isLooping = !engineController.isLooping
+    }
     Shortcut {
         sequence: "Shift+Tab"
         onActivated: bottomPanelMode = (bottomPanelMode === 0) ? 1 : 0
@@ -25,7 +82,7 @@ ApplicationWindow {
         Loader {
             id: topBarLoader
             Layout.fillWidth: true
-            Layout.preferredHeight: 50 // reduced
+            Layout.preferredHeight: 50
             source: "qrc:/qml/components/TopBar.qml"
         }
 
@@ -34,7 +91,15 @@ ApplicationWindow {
             Layout.fillHeight: true
             spacing: 2
             
-            // Left main section (Timeline & Mixer)
+            // Left sidebar
+            Loader {
+                id: sidebarLoader
+                Layout.preferredWidth: 270
+                Layout.fillHeight: true
+                source: "qrc:/qml/components/Sidebar.qml"
+            }
+
+            // Right main section (Timeline & Mixer)
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -48,7 +113,7 @@ ApplicationWindow {
                     
                     Loader {
                         id: trackHeadersLoader
-                        Layout.preferredWidth: 200 // reduced
+                        Layout.preferredWidth: 210
                         Layout.fillHeight: true
                         source: "qrc:/qml/components/TrackHeaders.qml"
                     }
@@ -79,18 +144,34 @@ ApplicationWindow {
                 Loader {
                     id: bottomPanelLoader
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 200 // reduced
+                    Layout.preferredHeight: 200
                     source: bottomPanelMode === 0 ? "qrc:/qml/components/MixerPanel.qml" : "qrc:/qml/components/PianoRoll.qml"
                 }
             }
-            
-            // Right sidebar
-            Loader {
-                id: sidebarLoader
-                Layout.preferredWidth: 260 // reduced
-                Layout.fillHeight: true
-                source: "qrc:/qml/components/Sidebar.qml"
-            }
+        }
+    }
+
+    // Floating status toast notification
+    Rectangle {
+        visible: statusToast !== ""
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.margins: 16
+        height: 32
+        width: toastText.implicitWidth + 28
+        radius: 6
+        color: "#111113"
+        border.color: "#98E87B"
+        border.width: 1
+        z: 100
+
+        Text {
+            id: toastText
+            anchors.centerIn: parent
+            text: statusToast
+            color: "#98E87B"
+            font.pixelSize: 11
+            font.bold: true
         }
     }
 }
